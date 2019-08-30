@@ -1,0 +1,5 @@
+connection_str: 'amqp://{login}:{passwd}@{ip}/'
+exchanger_name: 'topic_logs'
+queue_for_listing: 'crypto_currency_ms_listing'
+queue_for_error: 'crypto_currency_ms_err'
+crypto_currency_queue_name: 'crypto_currency_ms'

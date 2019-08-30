@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <title>CryptoView</title>
+</head>
+<body>
+    <div id="wrap">
+		<div id="tables">
+			<div id="symbols_table">
+                <div class="tools_tables">
+				    <span>Exchanges:</span>
+                    <select name="exchanges_combobox" id="exchanges_combobox" onchange="changeExchange(this)"
+						style="width: 100%" disabled></select>
+                    <span>Pairs:</span><br/>
+                    <input list="symbols_combobox" id="input_symbols_combobox" style="width: 100%" disabled>
+                        <datalist id="symbols_combobox">
+                            <option value=""></option>
+                        </datalist><br/><br/>
+                </div>
+				<div class="scroll_symbols">
+					<table>
+						<thead>
+						<tr>
+							<td><span>Pair</span></td>
+							<td><span>Bid</span></td>
+							<td><span>Ask</span></td>
+						</tr>
+						</thead>
+						<tbody id="symbols_rows">
+						</tbody>
+					</table>
+				</div>
+				<button name="delete_button" id="delete_button" onclick="buttonDeleteClick()"
+                        style="width: 100%" disabled>
+					<span>Delete from table</span>
+				</button>
+			</div>
+			<div id="market_depth">
+				<div class="scroll_market_depth">
+					<table>
+						<thead>
+						<tr>
+							<td><span>Price</span></td>
+							<td><span>Volume</span></td>
+						</tr>
+						</thead>
+						<tbody id="content_market_depth">
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<div id="ohlc">
+			<span>Time frames:</span>
+			<select name="time_frames_combobox" id="time_frames_combobox" onchange="changeTimeFrame(this)" disabled>
+			</select>
+			<div id="ohlc_chart"></div>
+		</div>
+    </div>
+
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="highstock.js"></script>
+	<script src="drag-panes.js"></script>
+	<script src="main_script.js"></script>
+</body>
+</html>
