@@ -12,6 +12,11 @@ async def index(request):
     return {}
 
 
+@aiohttp_jinja2.template('chart_page.html')
+async def chart_handler(request):
+    return {}
+
+
 async def ws_api_crypto_currency(request):
     """API chart page
 

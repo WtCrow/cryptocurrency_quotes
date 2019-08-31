@@ -2,100 +2,64 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    overflow: auto;
 }
 
-#wrap {
+body {
     margin: 0 auto;
-    padding: 10px 0;
+    padding-left: 10%;
+    padding-right: 10%;
+    padding-top: 3%;
     background-color: white;
     min-height: 100%;
     position: relative;
-    overflow: hidden;
 }
 
-#tables {
-    overflow: hidden;
-    padding: 0 10px;
-    display: flex;
-    width: 50%;
-    float: left;
-    max-height: 95vh;
+header {
+    font-size: 20pt;
+    text-align: center;
+    margin-bottom: 1%;
 }
 
-.tools_tables {
-    height: 15%;
+main {
+    padding: 1%;
+    background-color: #0080FF;
+    border-radius: 20px;
 }
 
-#symbols_table {
-    width: 50%;
-    padding-right: 10px;
+#discription {
+    color:white;
+    font-size: 14pt;
+    font-style: italic;
+    font-stretch: ultra-expanded;
+    padding: 2%;
 }
 
-.scroll_symbols {
-    border: 1px #DDD solid;
-    overflow: auto;
-    height: 81%;
+.img_link {
+    background-color: white;
+    margin-left: 12%;
+    margin-right: 12%;
+    margin-top: 1%;
+    width: 25%;
+    max-height: 30vh;
+    border-radius: 20px;
+    padding: 1%;
+    transition: 1s;
 }
 
-#delete_button {
-    height: 4%;
+.img_link:hover {
+    transform: scale(1.05);
 }
 
-#symbols_rows tr {
-    cursor: pointer;
-    -webkit-user-select: none; /* webkit (safari, chrome) browsers */
-    -moz-user-select: none; /* mozilla browsers */
-    -khtml-user-select: none; /* webkit (konqueror) browsers */
-    -ms-user-select: none; /* IE10+ */
+a {
+  color: #AEF1FF;
 }
 
-#market_depth {
-    height: 100%;
-    width: 50%;
+a:active {
+  color: #00FF2A;
 }
 
-.scroll_market_depth {
-    border: 1px #DDD solid;
-    overflow:auto;
-    height: 95vh;
-}
-
-#ohlc {
-    width: 50%;
-    float: right;
-    height: 100%;
-}
-
-#ohlc_chart {
-    height: 92vh;
-}
-
-.selected {
-    background-color: #6EABD1;
-    color: #FFF;
-}
-
-td {
-    border: 1px #DDD solid; 
-    padding: 3px;
-}
-
-html,
-body {
-    height: 100%;
-}
-
-table {
-    border-collapse: collapse;
-    table-layout: fixed;
-    width: 100%;
-}
-
-table td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-select {
-    margin-bottom: 10px;
+::selection {
+  background: white;
+  color: black;
 }

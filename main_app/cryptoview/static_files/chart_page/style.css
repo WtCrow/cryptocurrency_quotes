@@ -1,0 +1,101 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+main {
+    margin: 0 auto;
+    padding: 10px 0;
+    background-color: white;
+    min-height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+#tables {
+    overflow: hidden;
+    padding: 0 10px;
+    display: flex;
+    width: 50%;
+    float: left;
+    max-height: 95vh;
+}
+
+.tools_tables {
+    height: 15%;
+}
+
+#symbols_table {
+    width: 50%;
+    padding-right: 10px;
+}
+
+.scroll_symbols {
+    border: 1px #DDD solid;
+    overflow: auto;
+    height: 81%;
+}
+
+#delete_button {
+    height: 4%;
+}
+
+#symbols_rows tr {
+    cursor: pointer;
+    -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+    -moz-user-select: none; /* mozilla browsers */
+    -khtml-user-select: none; /* webkit (konqueror) browsers */
+    -ms-user-select: none; /* IE10+ */
+}
+
+#market_depth {
+    height: 100%;
+    width: 50%;
+}
+
+.scroll_market_depth {
+    border: 1px #DDD solid;
+    overflow:auto;
+    height: 95vh;
+}
+
+#ohlc {
+    width: 50%;
+    float: right;
+    height: 100%;
+}
+
+#ohlc_chart {
+    height: 92vh;
+}
+
+.selected {
+    background-color: #6EABD1;
+    color: #FFF;
+}
+
+td {
+    border: 1px #DDD solid; 
+    padding: 3px;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+}
+
+table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+select {
+    margin-bottom: 10px;
+}
