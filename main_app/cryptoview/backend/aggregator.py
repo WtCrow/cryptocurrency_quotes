@@ -101,7 +101,9 @@ class CryptoCurrencyAggregator:
                     self.subscribers_table[data_id] = new_subscribers
                     asyncio.get_event_loop().create_task(self._send_message_for_subscribe(data_id))
                 else:
-                    self.subscribers_table[data_id] += new_subscribers
+                    for new_subscriber in new_subscribers:
+                        if new_subscriber not in self.subscribers_table[data_id]:
+                            self.subscribers_table[data_id].append(new_subscriber)
 
         def callback_crypto_currency_listing(message):
             """Function for consume information about access pairs, exchanges and timeframes"""
@@ -171,8 +173,11 @@ class CryptoCurrencyAggregator:
             self.waiter_tables[data_id] = []
 
         # if user want get information, that user already wait, send error
-        if observer in self.waiter_tables[data_id] or\
-                observer in self.subscribers_table[data_id]:
+        if observer not in self.waiter_tables[data_id]:
+            self.waiter_tables[data_id].append(observer)
+            # get starting data
+            await self._send_message_for_get_starting_data(data_id)
+        else:
             # send information about error
             asyncio.get_event_loop().create_task(observer.update(
                 dict(
@@ -180,14 +185,9 @@ class CryptoCurrencyAggregator:
                     error=CryptoCurrencyAggregator.ERR_SECOND_SUB
                 )
             ))
-        else:
-            self.waiter_tables[data_id].append(observer)
-            # get starting data
-            await self._send_message_for_get_starting_data(data_id)
 
     async def detach(self, observer, data_id=None):
         """Remove observer from specific data thread or from all data thread"""
-
         if data_id:
             # check subscribers
             subscribers = self.subscribers_table.get(data_id, None)
