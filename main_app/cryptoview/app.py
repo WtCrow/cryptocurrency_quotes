@@ -1,4 +1,4 @@
-from .base_logic import CryptoCurrencyAggregator
+from .backend import CryptoCurrencyAggregator
 from .urls import setup_routes
 from aiohttp import web
 import aiohttp_jinja2

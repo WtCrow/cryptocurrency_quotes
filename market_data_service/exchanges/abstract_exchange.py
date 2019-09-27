@@ -144,12 +144,12 @@ class BaseExchange:
         pass
 
     async def _send_data_in_exchange(self, queue_name, data):
-        """Отправка данных в очередь"""
+        """Send message in queue"""
         data = json.dumps(data)
         await self.exchanger.publish(aio_pika.Message(body=data.encode()), routing_key=queue_name)
 
     async def _send_error_message(self, queue_name, exception=None):
-        """Отправка ошибки в очередь и запись ошибки локально"""
+        """Send error in queue"""
         path_to_config = Path(__file__).parents[1] / 'configs'
         with open(path_to_config / 'config.yaml', 'r') as f:
             err_queue = yaml.safe_load(f)['queue_error']

@@ -2,3 +2,9 @@
 .idea/
 __pycache__/
 venv/
+migrations/
+**/static/**/image/
+*.jpg
+*.png
+*.exe
+*.log

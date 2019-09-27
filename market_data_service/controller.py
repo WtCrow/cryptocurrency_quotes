@@ -81,6 +81,7 @@ class Controller:
         # Storage for async task
         self._futures = dict()
 
+        # variable for rabbitMQ
         self._connection = None
         self._channel = None
         self._exchanger = None
@@ -89,7 +90,7 @@ class Controller:
         self._listing = None
 
     async def run(self):
-        """Start controller"""
+        """Start consume message queue"""
 
         # declare queue, start consume
         self._connection = await aio_pika.connect(self._mq_connection_str, loop=asyncio.get_event_loop())
@@ -103,15 +104,18 @@ class Controller:
         self._listing = await self._get_listing_info()
 
         def callback(message):
+            """Callback for process message"""
             if Controller.IS_DEBUG:
                 print(message.body)
 
             try:
                 body = json.loads(message.body.decode('utf-8'))
 
+                # call validation
                 if self._is_not_valid(body):
                     return
 
+                # get action and call specific command
                 if body['action'] == Controller.ACTION_TYPE_STARTING:
                     if body['data_id'] == DATA_TYPE_LISTING:
                         asyncio.get_event_loop().create_task(self._send_listing_info())
@@ -186,6 +190,8 @@ class Controller:
         await self._send_data_in_exchange(self._queue_for_listing, json.dumps(self._listing))
 
     async def _get_starting_data(self, data_id):
+        """Send starting market data"""
+
         routing_key = f'starting.{data_id}'
 
         # type_task.exchange.pair[.time_frame]
@@ -203,6 +209,8 @@ class Controller:
             await self._send_data_in_exchange(routing_key, await exchange.get_starting_ticker(pair))
 
     async def _subscribe(self, data_id):
+        """Method for permanent get update specific market data"""
+
         loop = asyncio.get_event_loop()
 
         # type_task.exchange.pair[.time_frame]
@@ -220,6 +228,7 @@ class Controller:
             self._futures[data_id] = loop.create_task(exchange.subscribe_ticker(routing_key, pair))
 
     def _unsubscribe(self, data_id):
+        """Stop task for get update market data"""
         if data_id in self._futures.keys():
             self._futures[data_id].cancel()
             del self._futures[data_id]
@@ -244,11 +253,12 @@ class Controller:
         return listing
 
     async def _send_data_in_exchange(self, queue_name, data):
-        """Отправка данных в очередь"""
+        """Send message in queue"""
         data = json.dumps(data)
         await self._exchanger.publish(aio_pika.Message(body=data.encode()), routing_key=queue_name)
 
     async def _send_error_in_exchange(self, error, bad_message):
+        """Send error in queue"""
         message = dict(
             error=error,
             message=bad_message,

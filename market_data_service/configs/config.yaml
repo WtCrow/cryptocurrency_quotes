@@ -1,4 +1,4 @@
-connection_str: amqp://{login}:{passwd}@{ip}/
+connection_str: amqp://node1:passwd123@127.0.0.1/
 exchanger_name: topic_logs
 queue_this_node: crypto_currency_ms
 queue_error: crypto_currency_ms_err

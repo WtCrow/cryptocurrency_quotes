@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="cryptoview/css/style_chart.css">
     <title>CryptoView</title>
 </head>
 <body>
@@ -12,11 +12,13 @@
                 <div class="tools_tables">
 				    <span>Exchanges:</span>
                     <select name="exchanges_combobox" id="exchanges_combobox" onchange="changeExchange(this)"
-						style="width: 100%" disabled></select>
+						style="width: 100%" disabled>
+						<option>loading...</option>
+					</select>
                     <span>Pairs:</span><br/>
                     <input list="symbols_combobox" id="input_symbols_combobox" style="width: 100%" disabled>
                         <datalist id="symbols_combobox">
-                            <option value=""></option>
+                            <option value="">loading...</option>
                         </datalist><br/><br/>
                 </div>
 				<div class="scroll_symbols">
@@ -63,6 +65,6 @@
 	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 	<script src="https://code.highcharts.com/stock/highstock.js"></script>
 	<script src="https://code.highcharts.com/modules/drag-panes.js"></script>
-	<script src="main_script.js"></script>
+	<script src="cryptoview/js/chart_quotes_script.js"></script>
 </body>
 </html>

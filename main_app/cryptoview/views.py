@@ -1,24 +1,24 @@
-from cryptoview.base_logic import Observer
+from cryptoview.backend import Observer
 from aiohttp import web, WSMsgType
 from asyncio import CancelledError
 import aiohttp_jinja2
 import json
 
-IS_DEBUG = False
-
 
 @aiohttp_jinja2.template('index.html')
 async def index(request):
+    """Main page"""
     return {}
 
 
 @aiohttp_jinja2.template('chart_page.html')
 async def chart_handler(request):
+    """Chart page"""
     return {}
 
 
 async def ws_api_crypto_currency(request):
-    """API chart page
+    """API for get market data
 
     Connect to endpoint ws://{domain}/api/v1/ws
 
@@ -29,9 +29,9 @@ async def ws_api_crypto_currency(request):
         }
 
     data_type: ticket | candles | cup
-    exchange, pair, time_frame send with listing_info message
+    good values exchange, pair, time_frame you can get in response listing_info message
 
-    if 'data_type' = 'candles', need time_frame
+    if 'data_type' = 'candles', need add time_frame
 
     """
     err_bad_action_value = "Bad 'action' value"
@@ -44,23 +44,26 @@ async def ws_api_crypto_currency(request):
     if not ws.can_prepare(request).ok:
         return
     await ws.prepare(request)
+
+    # if socket close without close msg, will raise CancelledError
     try:
         while True:
             message = await ws.receive()
-            if IS_DEBUG:
-                print(message)
 
             if message.type == WSMsgType.text:
                 try:
                     message = json.loads(message.data)
-                    if 'action' not in message.keys() or 'data_id' not in message.keys():
+                    action = message.get('action', '')
+                    data_id = message.get('data_id', '')
+
+                    if not action or not data_id:
                         await ws.send_json(dict(error=err_bad_msg_format))
                         continue
 
-                    if message['action'] == 'sub':
-                        await request.app['Aggregator'].attach(observer, message['data_id'])
-                    elif message['action'] == 'unsub':
-                        await request.app['Aggregator'].detach(observer, message['data_id'])
+                    if action == 'sub':
+                        await request.app['Aggregator'].attach(observer, data_id)
+                    elif action == 'unsub':
+                        await request.app['Aggregator'].detach(observer, data_id)
                     else:
                         await ws.send_json(dict(error=err_bad_action_value))
                 except json.JSONDecodeError:
@@ -69,6 +72,5 @@ async def ws_api_crypto_currency(request):
                 await request.app['Aggregator'].detach(observer)
                 return ws
     except CancelledError as e:
-        # if socket close without close msg, will raise CancelledError
         await request.app['Aggregator'].detach(observer)
         raise e
