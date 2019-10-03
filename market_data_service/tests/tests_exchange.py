@@ -2,8 +2,8 @@ from unittest.mock import patch, MagicMock
 from exchanges.exchanges_connectors import *
 from collections.abc import Iterable
 from unittest import TestCase
-import asyncio
 import warnings
+import asyncio
 
 warnings.simplefilter("ignore", ResourceWarning)
 

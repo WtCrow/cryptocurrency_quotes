@@ -1,8 +1,7 @@
-from pathlib import Path
 import aio_pika
 import asyncio
 import json
-import yaml
+import os
 
 TYPE_TICKER = 'ticker'
 TYPE_CANDLES = 'candles'
@@ -25,15 +24,11 @@ class CryptoCurrencyAggregator:
         self.connection = None
         self.channel = None
 
-        # read config
-        path_to_config = Path(__file__).parents[1] / 'configs'
-        with open(path_to_config / 'rabbit_mq_config.yaml', 'r') as f:
-            config = yaml.safe_load(f)
-            self.mq_connection_str = config['connection_str']
-            self.name_queue_for_listing = config['queue_for_listing']
-            self.name_queue_for_error = config['queue_for_error']
-            self.exchanger = config['exchanger_name']
-            self.queue_crypto_currency = config['crypto_currency_queue_name']
+        self.mq_connection_str = os.environ.get('RABBIT_MQ_STR_CONN')
+        self.queue_crypto_quotes_service = os.environ.get('QUEUE_SERVICE_CRYPTO_QUOTES')
+        self.exchanger = os.environ.get('EXCHANGER')
+        self.name_queue_for_error = os.environ.get('ERROR_QUEUE')
+        self.name_queue_for_listing = os.environ.get('ROUTING_KEY_LISTING')
 
     async def run(self):
         """Function for start consume queue"""
@@ -227,7 +222,7 @@ class CryptoCurrencyAggregator:
                 data_id=data_id
             )
         ).encode('utf-8')
-        await self._send_message_in_queue(self.queue_crypto_currency, body)
+        await self._send_message_in_queue(self.queue_crypto_quotes_service, body)
 
     async def _send_message_for_subscribe(self, data_id):
         """Send message to microservice for start task"""
@@ -237,7 +232,7 @@ class CryptoCurrencyAggregator:
                 data_id=data_id
             )
         ).encode('utf-8')
-        await self._send_message_in_queue(self.queue_crypto_currency, body)
+        await self._send_message_in_queue(self.queue_crypto_quotes_service, body)
 
     async def _send_message_for_get_starting_data(self, data_id):
         """Send message to microservice for get starting data"""
@@ -247,7 +242,7 @@ class CryptoCurrencyAggregator:
                 data_id=data_id
             )
         ).encode('utf-8')
-        await self._send_message_in_queue(self.queue_crypto_currency, body)
+        await self._send_message_in_queue(self.queue_crypto_quotes_service, body)
 
     async def _send_message_in_queue(self, queue_name, body, reply_to=None):
         """Method for send message to microservice queue"""

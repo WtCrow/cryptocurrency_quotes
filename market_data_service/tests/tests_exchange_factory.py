@@ -1,5 +1,5 @@
-from exchanges import ExchangeFactory
 from exchanges.abstract_exchange import BaseExchange
+from exchanges import ExchangeFactory
 from unittest import TestCase
 
 

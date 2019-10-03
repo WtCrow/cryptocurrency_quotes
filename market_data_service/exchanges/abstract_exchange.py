@@ -1,9 +1,8 @@
 ﻿from abc import ABCMeta, abstractmethod
-from pathlib import Path
 import aio_pika
 import asyncio
 import json
-import yaml
+import os
 
 
 class BaseExchange:
@@ -150,7 +149,5 @@ class BaseExchange:
 
     async def _send_error_message(self, queue_name, exception=None):
         """Send error in queue"""
-        path_to_config = Path(__file__).parents[1] / 'configs'
-        with open(path_to_config / 'config.yaml', 'r') as f:
-            err_queue = yaml.safe_load(f)['queue_error']
+        err_queue = os.environ.get('ERROR_QUEUE')
         await self._send_data_in_exchange(err_queue, {"error": queue_name, "exception": exception})

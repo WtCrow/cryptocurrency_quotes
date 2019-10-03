@@ -1,9 +1,8 @@
 from exchanges.exchange_factory import ExchangeFactory
-from pathlib import Path
 import aio_pika
 import asyncio
-import yaml
 import json
+import os
 
 DATA_TYPE_CANDLES = 'candles'
 DATA_TYPE_DEPTH = 'depth'
@@ -65,15 +64,11 @@ class Controller:
     ACTION_TYPE_STARTING = 'get_starting'
 
     def __init__(self):
-        # read config
-        path_to_config = Path(__file__).parents[0] / 'configs'
-        with open(path_to_config / 'config.yaml', 'r') as f:
-            config = yaml.safe_load(f)
-            self._mq_connection_str = config['connection_str']
-            self._queue_for_consume = config['queue_this_node']
-            self._exchanger_name = config['exchanger_name']
-            self._queue_for_error = config['queue_error']
-            self._queue_for_listing = config['queue_listing']
+        self._mq_connection_str = os.environ.get('RABBIT_MQ_STR_CONN')
+        self._queue_for_consume = os.environ.get('QUEUE_THIS_SERVICE')
+        self._exchanger_name = os.environ.get('EXCHANGER')
+        self._queue_for_error = os.environ.get('ERROR_QUEUE')
+        self._queue_for_listing = os.environ.get('ROUTING_KEY_LISTING')
 
         # ExchangeFactory change and create exchange object
         self._factory = None
