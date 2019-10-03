@@ -19,7 +19,7 @@ class HitBTC(BaseExchange):
         self._endpoint_rest = 'https://api.hitbtc.com'
 
         # Key this unification view for this MS, value dict this variable for API exchange
-        self.access_time_frames = ['M1', 'M3', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', '1W', '1M']
+        self.access_time_frames = ['M1', 'M3', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'D7', '1M']
 
         # Time for repeat if use polling
         self._time_out = 2

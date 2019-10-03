@@ -157,7 +157,7 @@ function setCandles(candles) {
     vol = [];
     var time = 0;
     for (var i = 0; i < candles.length; i++) {
-        time = candles[i][5]
+        time = candles[i][5] * 1000
         ohlc.push([time, parseFloat(candles[i][0]), parseFloat(candles[i][1]), parseFloat(candles[i][2]),
                   parseFloat(candles[i][3])]);
         vol.push([time, parseFloat(candles[i][4])]);
@@ -170,7 +170,7 @@ function setCandles(candles) {
 
 // update last candles or append new candles
 function updateCandle(candle) {
-    var time = candle[5]
+    var time = candle[5] * 1000
 
     // if time not update, delete last candle and volume bar
     if (lastTime == time)
@@ -347,9 +347,10 @@ function clickToSymbol(){
 function doubleClickToSymbol(){
     var selectedExchange = selectedPair.split(' | ')[0],
         selectedSymbol = selectedPair.split(' | ')[1];
-    // If select pair that already to char return
+    // If select pair then already to char return
     if (chartPair == selectedSymbol && chartExchange == selectedExchange) { return; }
 
+    // if on chart exist pair data, then unsub
     if (chartPair != '' && chartExchange != '') {
         request = DATA_TYPE_DEPTH + '.' + chartExchange + '.' + chartPair;
         sendRequest(ACTION_UNSUB, request)
@@ -358,15 +359,17 @@ function doubleClickToSymbol(){
     }
 
     // if chart is empty or select other exchange, change time frame
-    if (chartPair == '' || selectedExchange != exchange){
+    if (chartPair == '' || selectedExchange != chartExchange){
         var timeFrames = listing[selectedExchange][0],
             htmlChilds = '';
-        for (var i = 0; i < listing[exchange][0].length; i++) {
-            htmlChilds += '<option value="' + listing[exchange][0][i] + '">' + listing[exchange][0][i] + '</option>';
+
+        for (var i = 0; i < listing[selectedExchange][0].length; i++) {
+            timeFrame = listing[selectedExchange][0][i]
+            htmlChilds += '<option value="' + timeFrame + '">' + timeFrame + '</option>';
         }
 
         document.getElementById('time_frames_combobox').innerHTML = htmlChilds;
-        timeFrame = listing[exchange][0][0]
+        timeFrame = listing[selectedExchange][0][0]
         $("#time_frames_combobox").val(timeFrame);
     }
 
@@ -381,6 +384,7 @@ function doubleClickToSymbol(){
 
 function buttonDeleteClick() {
     if (selectedPair == '' || selectedRow == null) { return }
+    console.log(selectedPair + ' ' + selectedRow.innerHTML)
     selectedRow.remove();
 
     var selectedExchange = selectedPair.split(' | ')[0],
@@ -458,22 +462,30 @@ $(document).on('change', 'input', function(){
         }
     }
 
-    symbols_from_table = document.getElementById("symbols_rows").innerHTML
-    exchange_symbols = listing[exchange][1]
-    pair_in_table = '>' + exchange + ' | ' + symbol + '<'
+    symbolsTableHTML = document.getElementById("symbols_rows").innerHTML
+    symbolsThisExchange = listing[exchange][1]
+    formatPair = '>' + exchange + ' | ' + symbol + '<'
 
-    if (symbol != '' && exchange_symbols.includes(symbol) && !symbols_from_table.includes(pair_in_table)) {
+    // if this pair this exchange not contain in table, then add
+    if (symbol != '' && symbolsThisExchange.includes(symbol) && !symbolsTableHTML.includes(formatPair)) {
+        // update HTML
         var new_row = '<tr><td class="pair">' + exchange + ' | ' + symbol + '</td><td class="bid">-</td><td class="ask">-</td></tr>'
-        document.getElementById("symbols_rows").innerHTML += new_row;
+        $('#symbols_rows').append(new_row)
+
+        // set events
         $("#symbols_rows tr").click(clickToSymbol);
         $("#symbols_rows tr").dblclick(doubleClickToSymbol);
+
+        // request data to server
         request = DATA_TYPE_TICKER + '.' + exchange + '.' + symbol;
         sendRequest(ACTION_SUB, request)
     }
 
+    // get empty symbol
     $('#input_symbols_combobox').val('');
 });
 
+// for find in list symbols
 $(document).ready(function(){
     $("input").click(function(){
         $(this).next().show();
