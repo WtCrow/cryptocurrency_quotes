@@ -1,0 +1,68 @@
+version: '2.1'
+networks:
+  localnet:
+    driver: bridge
+
+services:
+  main_web:
+    build: ./main_app
+    ports:
+      - "8080:8080"
+    environment:
+      - RABBIT_MQ_STR_CONN=amqp://main_web:passwd_web@rabbit:5672/
+      - EXCHANGER=topic_logs
+      - ROUTING_KEY_LISTING=crypto_currency_ms_listing
+      - ERROR_QUEUE=crypto_currency_ms_err
+      - QUEUE_SERVICE_CRYPTO_QUOTES=crypto_currency_ms
+    restart: on-failure
+    depends_on:
+      market_data_service:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
+    links: 
+      - rabbit
+    networks:
+      - localnet
+    volumes:
+      - ./main_app:/usr/src/web_app
+
+
+  market_data_service:
+    build: ./market_data_service
+    environment:
+      - RABBIT_MQ_STR_CONN=amqp://market_data_service:passwd_service_quotes@rabbit:5672/
+      - EXCHANGER=topic_logs
+      - QUEUE_THIS_SERVICE=crypto_currency_ms
+      - ERROR_QUEUE=crypto_currency_ms_err
+      - ROUTING_KEY_LISTING=crypto_currency_ms_listing
+    restart: on-failure
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    links: 
+      - rabbit
+    networks:
+      - localnet
+    volumes:
+      - ./market_data_service:/usr/src/crypto_quotes
+
+  rabbit:
+    build: ./tuned_rabbitmq
+    ports:
+      - "15672:15672"
+      - "4369:4369"
+      - "5671:5671"
+      - "5672:5672"
+      - "25672:25672"
+      - "15671:15671"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15672"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - localnet
+    volumes:
+      - ./tuned_rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
+      - ./tuned_rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro

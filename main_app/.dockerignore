@@ -1,0 +1,8 @@
+*.pyc
+venv/
+tests/
+.idea/
+**/__pycache__/
+.git
+Dockerfile
+.dockerignore
