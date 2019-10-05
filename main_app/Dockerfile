@@ -11,4 +11,7 @@ COPY . /usr/src/web_app/
 
 EXPOSE 8080
 
+RUN adduser -D myuser
+USER myuser
+
 CMD ["gunicorn", "cryptoview.app:create_app",  "--bind",  "0.0.0.0:8080", "--worker-class", "aiohttp.GunicornWebWorker"]
