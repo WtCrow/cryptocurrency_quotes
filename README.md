@@ -12,14 +12,14 @@ With docker and docker-compose:
 4) Profit!
 
 Without docker and docker-compose:
-# RabbitMQ
+RabbitMQ
 1) Install and start rabbimq
 2) In cmd enter: `rabbitmqctl main_web web passwd_web`
 3) In cmd enter: `rabbitmqctl set_permissions -p / main_web ".*" ".*" ".*"`
 4) In cmd enter: `rabbitmqctl add_user market_data_service passwd_service_quotes`
 5) In cmd enter: `rabbitmqctl set_permissions -p / market_data_service ".*" ".*" ".*"`
 
-# Web aggregator
+Web aggregator
 6) Open new cmd and enter: `cd <path/to/project>/main_app`
 7) Enter in cmd: `pip install -r requirements.txt`
 8) In new cmd enter next strings:
@@ -30,7 +30,7 @@ Without docker and docker-compose:
 - set QUEUE_SERVICE_CRYPTO_QUOTES=crypto_currency_ms
 9) In new cmd enter: `python(3) main.py`
 
-# Service for collects cryptocurrency quotes
+Service for collects cryptocurrency quotes
 10) Open new cmd and enter: `cd <path/to/project>/market_data_service`
 11) Enter in cmd: `pip install -r requirements.txt`
 12) In new cmd enter next strings:
