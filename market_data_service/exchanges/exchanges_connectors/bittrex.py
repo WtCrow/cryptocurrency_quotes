@@ -12,7 +12,7 @@ class Bittrex(BaseExchange):
 
     def __init__(self, exchanger):
         super().__init__(exchanger)
-        self._endpoint_rest = 'https://api.bittrex.com'
+        self._root_url_rest = 'https://api.bittrex.com'
 
         # Key this unification view for this MS, value dict this variable for API exchange
         self._time_frame_translate = dict([('M1', 'MINUTE_1'), ('M5', 'MINUTE_5'), ('H1', 'HOUR_1'), ('D1', 'DAY_1')])
@@ -23,7 +23,7 @@ class Bittrex(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            url = f'{self._endpoint_rest}/v3/markets'
+            url = f'{self._root_url_rest}/v3/markets'
             async with session.get(url) as response:
                 response = await response.text()
 
@@ -53,7 +53,7 @@ class Bittrex(BaseExchange):
 
     async def _get_starting_ticker(self, symbol):
         async with ClientSession() as session:
-            url = f'{self._endpoint_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/ticker'
+            url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/ticker'
             async with session.get(url) as response:
                 response = await response.text()
                 bid_ask = json.loads(response)
@@ -73,7 +73,7 @@ class Bittrex(BaseExchange):
 
     async def _get_starting_candles(self, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
+            url_rest = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
                 f'/candles?CandleInterval={self._time_frame_translate[time_frame]}'
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -105,7 +105,7 @@ class Bittrex(BaseExchange):
 
     async def _get_starting_depth(self, symbol):
         async with ClientSession() as session:
-            url = f'{self._endpoint_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/orderbook'
+            url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/orderbook'
             async with session.get(url) as response:
                 response = await response.text()
                 bid_ask = json.loads(response)
@@ -136,7 +136,7 @@ class Bittrex(BaseExchange):
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            url = f'{self._endpoint_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/ticker'
+            url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/ticker'
             while True:
                 async with session.get(url) as response:
                     response = await response.text()
@@ -158,7 +158,7 @@ class Bittrex(BaseExchange):
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
+            url_rest = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
                 f'/candles?CandleInterval={self._time_frame_translate[time_frame]}'
             while True:
                 async with session.get(url_rest) as response:
@@ -189,7 +189,7 @@ class Bittrex(BaseExchange):
 
     async def _subscribe_depth(self, queue_name, symbol):
         async with ClientSession() as session:
-            url = f'{self._endpoint_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/orderbook'
+            url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/orderbook'
             while True:
                 async with session.get(url) as response:
                     response = await response.text()
@@ -221,7 +221,7 @@ class Bittrex(BaseExchange):
                     await asyncio.sleep(self._time_out)
 
     async def _symbol_translate(self, symbol, session):
-        url = f'{self._endpoint_rest}/v3/markets'
+        url = f'{self._root_url_rest}/v3/markets'
         async with session.get(url) as response:
             response = await response.text()
             response = json.loads(response)

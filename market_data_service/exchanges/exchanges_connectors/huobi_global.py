@@ -15,8 +15,8 @@ class HuobiGlobal(BaseExchange):
         super().__init__(exchanger)
         self._max_candle = 2000
 
-        self._endpoint_rest = 'http://api.huobi.pro'
-        self._endpoint_ws = 'wss://api.huobi.pro/ws'
+        self._root_url_rest = 'http://api.huobi.pro'
+        self._root_url_ws = 'wss://api.huobi.pro/ws'
 
         # Key this unification view for this MS, value dict this variable for API exchange
         self._time_frame_translate = dict([('M1', '1min'), ('M5', '5min'), ('M15', '15min'), ('M30', '30min'),
@@ -26,7 +26,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            rest_url = f'{self._endpoint_rest}/v1/common/symbols'
+            rest_url = f'{self._root_url_rest}/v1/common/symbols'
             async with session.get(rest_url) as response:
                 response = await response.text()
 
@@ -61,7 +61,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_starting_ticker(self, symbol):
         async with ClientSession() as session:
-            rest_url = f'{self._endpoint_rest}/market/detail/merged?symbol={symbol.lower()}'
+            rest_url = f'{self._root_url_rest}/market/detail/merged?symbol={symbol.lower()}'
             async with session.get(rest_url) as response:
                 response = await response.text()
 
@@ -88,7 +88,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_starting_candles(self, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/market/history/kline?symbol={symbol.lower()}' \
+            url_rest = f'{self._root_url_rest}/market/history/kline?symbol={symbol.lower()}' \
                 f'&period={self._time_frame_translate[time_frame]}&size={self._max_candle}'
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -120,7 +120,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_starting_depth(self, symbol):
         async with ClientSession() as session:
-            rest_url = f'{self._endpoint_rest}/market/depth?symbol={symbol.lower()}&type=step1'
+            rest_url = f'{self._root_url_rest}/market/depth?symbol={symbol.lower()}&type=step1'
             async with session.get(rest_url) as response:
                 response = await response.text()
 
@@ -144,7 +144,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            async with session.ws_connect(self._endpoint_ws) as ws:
+            async with session.ws_connect(self._root_url_ws) as ws:
 
                 id_ = hashlib.md5("huobi_ticker".encode('utf-8')).hexdigest()
                 json_params = {
@@ -189,7 +189,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            async with session.ws_connect(self._endpoint_ws) as ws:
+            async with session.ws_connect(self._root_url_ws) as ws:
 
                 id_ = hashlib.md5("huobi_candle".encode('utf-8')).hexdigest()
                 json_params = {
@@ -240,7 +240,7 @@ class HuobiGlobal(BaseExchange):
 
     async def _subscribe_depth(self, queue_name, symbol):
         async with ClientSession() as session:
-            async with session.ws_connect(self._endpoint_ws) as ws:
+            async with session.ws_connect(self._root_url_ws) as ws:
 
                 id_ = hashlib.md5("huobi_depth".encode('utf-8')).hexdigest()
                 json_params = {

@@ -17,8 +17,8 @@ class BaseOkExchange(BaseExchange):
         super().__init__(exchanger)
         self._max_candle = 200
 
-        self._endpoint_ws = ws_url
-        self._endpoint_rest = rest_url
+        self._root_url_ws = ws_url
+        self._root_url_rest = rest_url
 
         # Key this unification view for this MS, value dict this variable for API exchange
         self._time_frame_translate = dict([('M1', '60'), ('M3', '180'), ('M5', '300'), ('M15', '900'),
@@ -31,7 +31,7 @@ class BaseOkExchange(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/instruments/ticker'
+            url_rest = f'{self._root_url_rest}/instruments/ticker'
             async with session.get(url_rest) as response:
                 response = await response.text()
                 response = json.loads(response)
@@ -67,7 +67,7 @@ class BaseOkExchange(BaseExchange):
 
     async def _get_starting_ticker(self, symbol):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/instruments/{(await self._symbol_translate(symbol, session))}/ticker'
+            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}/ticker'
             async with session.get(url_rest) as response:
                 response = await response.text()
 
@@ -113,7 +113,7 @@ class BaseOkExchange(BaseExchange):
 
     async def _get_starting_candles(self, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
+            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
                 f'/candles?granularity={self._time_frame_translate[time_frame]}'
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -151,7 +151,7 @@ class BaseOkExchange(BaseExchange):
 
     async def _get_starting_depth(self, symbol):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
+            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
                 f'/book?size=20&'
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -218,7 +218,7 @@ class BaseOkExchange(BaseExchange):
         response = None
         try:
             async with ClientSession() as session:
-                async with session.ws_connect(self._endpoint_ws) as ws:
+                async with session.ws_connect(self._root_url_ws) as ws:
 
                     json_params = {"op": "subscribe",
                                    "args": [f"spot/ticker:{await self._symbol_translate(symbol, session)}"]}
@@ -274,7 +274,7 @@ class BaseOkExchange(BaseExchange):
         response = None
         try:
             async with ClientSession() as session:
-                async with session.ws_connect(self._endpoint_ws) as ws:
+                async with session.ws_connect(self._root_url_ws) as ws:
                     json_params = {
                         "op": "subscribe",
                         "args": [
@@ -331,7 +331,7 @@ class BaseOkExchange(BaseExchange):
 
     async def _subscribe_depth(self, queue_name, symbol):
         async with ClientSession() as session:
-            url_rest = f'{self._endpoint_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
+            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
                 f'/book?size=20&'
             while True:
                 async with session.get(url_rest) as response:
@@ -397,7 +397,7 @@ class BaseOkExchange(BaseExchange):
 
     async def _symbol_translate(self, symbol, session):
         """Translate symbol in format for API"""
-        url_rest = f'{self._endpoint_rest}/instruments/ticker'
+        url_rest = f'{self._root_url_rest}/instruments/ticker'
         async with session.get(url_rest) as response:
             response = await response.text()
             response = json.loads(response)

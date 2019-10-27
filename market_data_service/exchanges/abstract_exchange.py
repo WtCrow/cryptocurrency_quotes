@@ -6,7 +6,26 @@ import os
 
 
 class BaseExchange:
-    """Base class for exchanges-connectors"""
+    """Base class for exchanges-connectors
+
+    TODO: create structure with pattern methods:
+        for get_starting_{data}:
+            try
+                async with ClientSession() as session:
+                    response = self._get_data_from_server(session)
+                    return self._get_formated_starting_{data}(response)
+            except (asyncio.CancelledError, ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+            if type(e).__name__ != asyncio.CancelledError.__name__:
+                return {empty_data}
+        ---
+        for subscribe_{data}:
+            try
+                async with ClientSession() as session:
+                    self._subscribe_update_{data}(session)
+            except (asyncio.CancelledError, ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+            if type(e).__name__ != asyncio.CancelledError.__name__:
+                await self._send_error_message(queue_name, e)
+    """
 
     __metaclass__ = ABCMeta
 

@@ -13,8 +13,8 @@ class Binance(BaseExchange):
         super().__init__(exchanger)
         self._max_candles = 1000
 
-        self._endpoint_ws = 'wss://stream.binance.com:9443/ws'
-        self._endpoint_rest = 'https://api.binance.com'
+        self._root_url_ws = 'wss://stream.binance.com:9443/ws'
+        self._root_url_rest = 'https://api.binance.com'
 
         # Key this unification view for this MS, value dict this variable for API exchange
         self._time_frame_translate = dict([('M1', '1m'), ('M5', '5m'), ('M15', '15m'), ('M30', '30m'),
@@ -26,7 +26,7 @@ class Binance(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            rest_url = f'{self._endpoint_rest}/api/v3/ticker/price'
+            rest_url = f'{self._root_url_rest}/api/v3/ticker/price'
             async with session.get(rest_url) as response:
                 response = await response.text()
 
@@ -53,7 +53,7 @@ class Binance(BaseExchange):
                 return symbols
 
     async def _get_starting_ticker(self, symbol):
-        url_rest = f'{self._endpoint_rest}/api/v3/ticker/bookTicker?symbol={symbol}'
+        url_rest = f'{self._root_url_rest}/api/v3/ticker/bookTicker?symbol={symbol}'
         async with ClientSession() as session:
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -73,7 +73,7 @@ class Binance(BaseExchange):
 
     async def _get_starting_candles(self, symbol, time_frame):
         async with ClientSession() as session:
-            rest_url = f'{self._endpoint_rest}/api/v1/klines?symbol={symbol}' \
+            rest_url = f'{self._root_url_rest}/api/v1/klines?symbol={symbol}' \
                 f'&interval={self._time_frame_translate[time_frame]}&limit={self._max_candles}'
             async with session.get(rest_url) as response:
                 response = await response.text()
@@ -107,7 +107,7 @@ class Binance(BaseExchange):
                 return candles
 
     async def _get_starting_depth(self, symbol):
-        url_rest = f'{self._endpoint_rest}/api/v1/depth?symbol={symbol}&limit=20'
+        url_rest = f'{self._root_url_rest}/api/v1/depth?symbol={symbol}&limit=20'
         async with ClientSession() as session:
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -140,7 +140,7 @@ class Binance(BaseExchange):
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            ws_url = f'{self._endpoint_ws}/{symbol.lower()}@ticker'
+            ws_url = f'{self._root_url_ws}/{symbol.lower()}@ticker'
             async with session.ws_connect(ws_url) as ws:
                 while True:
                     response = await ws.receive()
@@ -181,7 +181,7 @@ class Binance(BaseExchange):
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             symbol = symbol.lower()
-            url_ws = f'{self._endpoint_ws}/{symbol}@kline_{self._time_frame_translate[time_frame]}'
+            url_ws = f'{self._root_url_ws}/{symbol}@kline_{self._time_frame_translate[time_frame]}'
             async with session.ws_connect(url_ws) as ws:
                 while True:
                     response = await ws.receive()
@@ -222,7 +222,7 @@ class Binance(BaseExchange):
                     await self._send_data_in_exchange(queue_name, candle)
 
     async def _subscribe_depth(self, queue_name, symbol):
-        url_rest = f'{self._endpoint_rest}/api/v1/depth?symbol={symbol}&limit=20'
+        url_rest = f'{self._root_url_rest}/api/v1/depth?symbol={symbol}&limit=20'
         async with ClientSession() as session:
             while True:
                 async with session.get(url_rest) as response:

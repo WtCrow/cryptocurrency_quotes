@@ -15,8 +15,8 @@ class HitBTC(BaseExchange):
         super().__init__(exchanger)
         self._max_candle = 1000
 
-        self._endpoint_ws = 'wss://api.hitbtc.com/api/2/ws'
-        self._endpoint_rest = 'https://api.hitbtc.com'
+        self._root_url_ws = 'wss://api.hitbtc.com/api/2/ws'
+        self._root_url_rest = 'https://api.hitbtc.com'
 
         # Key this unification view for this MS, value dict this variable for API exchange
         self.access_time_frames = ['M1', 'M3', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'D7', '1M']
@@ -26,7 +26,7 @@ class HitBTC(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            rest_url = f'{self._endpoint_rest}/api/2/public/symbol'
+            rest_url = f'{self._root_url_rest}/api/2/public/symbol'
             async with session.get(rest_url) as response:
                 response = await response.text()
 
@@ -56,7 +56,7 @@ class HitBTC(BaseExchange):
                 return symbols
 
     async def _get_starting_ticker(self, symbol):
-        url_rest = f'{self._endpoint_rest}/api/2/public/ticker/{symbol}'
+        url_rest = f'{self._root_url_rest}/api/2/public/ticker/{symbol}'
         async with ClientSession() as session:
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -81,7 +81,7 @@ class HitBTC(BaseExchange):
                 return ticker['bid'], ticker['ask']
 
     async def _get_starting_candles(self, symbol, time_frame):
-        url_rest = f'{self._endpoint_rest}/api/2/public/candles/{symbol}?period={time_frame}'
+        url_rest = f'{self._root_url_rest}/api/2/public/candles/{symbol}?period={time_frame}'
         async with ClientSession() as session:
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -119,7 +119,7 @@ class HitBTC(BaseExchange):
                 return formatted_candles
 
     async def _get_starting_depth(self, symbol):
-        url_rest = f'{self._endpoint_rest}/api/2/public/orderbook/{symbol}?limit=20'
+        url_rest = f'{self._root_url_rest}/api/2/public/orderbook/{symbol}?limit=20'
         async with ClientSession() as session:
             async with session.get(url_rest) as response:
                 response = await response.text()
@@ -159,7 +159,7 @@ class HitBTC(BaseExchange):
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            async with session.ws_connect(self._endpoint_ws) as ws:
+            async with session.ws_connect(self._root_url_ws) as ws:
 
                 id_ = hashlib.md5("hitbtc_ticker".encode('utf-8')).hexdigest()
                 json_params = {
@@ -205,7 +205,7 @@ class HitBTC(BaseExchange):
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            async with session.ws_connect(self._endpoint_ws) as ws:
+            async with session.ws_connect(self._root_url_ws) as ws:
 
                 id_ = hashlib.md5("hitbtc_candles".encode('utf-8')).hexdigest()
                 json_params = {
@@ -289,7 +289,7 @@ class HitBTC(BaseExchange):
                     await self._send_data_in_exchange(queue_name, candle)
 
     async def _subscribe_depth(self, queue_name, symbol):
-        url_rest = f'{self._endpoint_rest}/api/2/public/orderbook/{symbol}?limit=20'
+        url_rest = f'{self._root_url_rest}/api/2/public/orderbook/{symbol}?limit=20'
         async with ClientSession() as session:
             while True:
                 async with session.get(url_rest) as response:
