@@ -8,9 +8,7 @@ ms_queue = 'crypto_currency_ms'
 
 
 async def send_message(data):
-    """
-    Отправляет сообщение data  в очередь queue_name
-    """
+    """Send message to queue_name"""
     conn = await aio_pika.connect(connection_str, loop=asyncio.get_event_loop())
     async with await conn.channel() as chn:
         message = aio_pika.Message(data.encode())
@@ -42,11 +40,14 @@ async def consume():
 
 async def main():
     await consume()
+
+    test_action, test_data_id = 'sub', 'ticker.Binance.BTCUSDT'
+
     # write message for MS
     message = json.dumps(
         dict(
-            action='sub',
-            data_id='ticker.Binance.BTCUSDT'
+            action=test_action,
+            data_id=test_data_id
         )
     )
     await send_message(message)

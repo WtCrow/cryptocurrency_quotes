@@ -1,9 +1,11 @@
 version: '2.1'
+
 networks:
   localnet:
     driver: bridge
 
 services:
+
   main_web:
     build: ./main_app
     ports:
@@ -26,7 +28,6 @@ services:
       - localnet
     volumes:
       - ./main_app:/usr/src/web_app
-
 
   market_data_service:
     build: ./market_data_service
@@ -51,15 +52,11 @@ services:
     build: ./tuned_rabbitmq
     ports:
       - "15672:15672"
-      - "4369:4369"
-      - "5671:5671"
       - "5672:5672"
-      - "25672:25672"
-      - "15671:15671"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
-      interval: 30s
-      timeout: 10s
+      interval: 15s
+      timeout: 5s
       retries: 5
     networks:
       - localnet

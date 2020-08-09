@@ -169,4 +169,4 @@ class BaseExchange:
     async def _send_error_message(self, queue_name, exception=None):
         """Send error in queue"""
         err_queue = os.environ.get('ERROR_QUEUE')
-        await self._send_data_in_exchange(err_queue, {"error": queue_name, "exception": exception})
+        await self._send_data_in_exchange(err_queue, {"error_roting_key": queue_name, "exception": exception})

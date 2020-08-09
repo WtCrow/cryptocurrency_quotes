@@ -3,21 +3,22 @@ from .exchanges_connectors import *
 
 class ExchangeNotExistError(Exception):
 
-    def __init__(self):
+    def __init__(self, exchange=None):
+        self.error_exchange = exchange
         super().__init__()
 
     def __str__(self):
-        return repr('This exchange not found in Factory.')
+        return repr(f'{self.error_exchange} not found in Factory.')
 
 
 class ExchangeFactory:
-    """Class for create and change exchange."""
+    """Class for create exchanges."""
 
     def __init__(self, exchanger):
         self.exchanger = exchanger
         # Classes all exchanges
         self._exchanges = [Binance, HitBTC, HuobiGlobal, Bittrex, OkCoin, OkEx]
-        # Хранилище уже созданных бирж
+        # already created exchanges instance
         self._instances_exchanges = dict()
 
     def get_all_exchanges_names(self):
@@ -31,10 +32,10 @@ class ExchangeFactory:
         else get class and create new object
 
         """
-        if name not in self._instances_exchanges.keys():
+        if not self._instances_exchanges.get(name):
             exchange = list(filter(lambda item: item.name == name, self._exchanges))
             if exchange:
                 self._instances_exchanges[name] = exchange[0](exchanger=self.exchanger)
             else:
-                raise ExchangeNotExistError()
+                raise ExchangeNotExistError(name)
         return self._instances_exchanges[name]

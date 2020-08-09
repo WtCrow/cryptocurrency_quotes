@@ -1,2 +1,2 @@
-aiohttp==3.5.4
+aiohttp==3.6.2
 aio_pika==5.5.3

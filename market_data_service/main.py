@@ -2,8 +2,8 @@ if __name__ == '__main__':
     from controller import Controller
     import asyncio
 
-    contr = Controller()
+    controller = Controller()
 
     loop = asyncio.get_event_loop()
-    loop.create_task(contr.run())
+    loop.create_task(controller.run())
     loop.run_forever()
