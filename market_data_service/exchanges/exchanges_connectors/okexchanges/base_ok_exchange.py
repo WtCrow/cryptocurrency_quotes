@@ -403,12 +403,15 @@ class BaseOkExchange(BaseExchange):
             """
             [
                 {
+                    ...
                     "base_currency":"BTC",
                     "instrument_id":"BTC-USDT",
+                    "product_id":"BTC-USDT",
                     "min_size":"0.001",
                     "quote_currency":"USDT",
                     "size_increment":"0.00000001",
                     "tick_size":"0.1"
+                    ...
                 },
                 {
                     "base_currency":"OKB",

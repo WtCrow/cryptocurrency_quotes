@@ -7,5 +7,5 @@ class OkEx(BaseOkExchange):
     name = 'OKEx'
 
     def __init__(self, mq_exchanger):
-        super(OkEx, self).__init__('wss://real.okex.com:10442/ws/v3/', 'https://www.okex.com/api/spot/v3',
+        super(OkEx, self).__init__('wss://real.okex.com:8443/ws/v3/', 'https://www.okex.com/api/spot/v3',
                                    mq_exchanger)

@@ -298,7 +298,6 @@ class OkCoinTests(TestShading.BaseExchangeTests):
         self.symbol = 'BTCUSD'
         self.exchange = OkCoin(None)
         self.is_print_result = True
-        self.time_out = 20
 
 
 class OkExTests(TestShading.BaseExchangeTests):
@@ -309,4 +308,3 @@ class OkExTests(TestShading.BaseExchangeTests):
         self.symbol = 'BTCUSDT'
         self.exchange = OkEx(None)
         self.is_print_result = True
-        self.time_out = 20
