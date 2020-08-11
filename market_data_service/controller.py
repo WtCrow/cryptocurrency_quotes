@@ -27,7 +27,7 @@ class Controller:
     action:
         sub - start collecting market data task
         unsub - stop collecting market data task
-        get_starting_data - if requested candlestick, be send several old candles, if requested depth or ticket be send
+        get_starting - if requested candlestick, be send several old candles, if requested depth or ticker be send
           current value
     data_id:
         listing_info - get information about exchanges, pairs and timeframes access
@@ -35,7 +35,7 @@ class Controller:
 
         About parts data_type.exchange.pair[.time_frame]:
             data_type:
-                ticket - bid and ask prices
+                ticker - bid and ask prices
                 candles - OHLCV candles
                 depth - market depth
             exchange: some exchange from list, that send by 'data_id' == 'listing_info'
@@ -58,7 +58,7 @@ class Controller:
     """
 
     # error messages
-    ERR_BAD_DATA_ID = "Invalid 'data_type' value"
+    ERR_BAD_DATA_TYPE = "Invalid 'data_type' value"
     ERR_BAD_EXCHANGE = "Invalid 'exchange' value"
     ERR_BAD_PAIR = "Invalid 'pair' value"
     ERR_BAD_TIME_FRAME = "Invalid 'time_frame' value"
@@ -103,7 +103,7 @@ class Controller:
         self._factory = ExchangeFactory(self._exchanger)
         self._listing = await self._get_listing_info()
 
-        def main_callback(message):
+        def callback(message):
             """Callback for process message"""
 
             try:
@@ -113,21 +113,23 @@ class Controller:
                     self._send_error_in_exchange(message.body, Controller.ERR_NOT_JSON)
                 )
                 return
+            print(body)
 
             if self._is_not_valid(body):
                 return
 
+            loop = asyncio.get_event_loop()
             if body['action'] == Controller.ACTION_TYPE_STARTING:
                 if body['data_id'] == DATA_TYPE_LISTING:
-                    asyncio.get_event_loop().create_task(self._send_listing_info())
+                    loop.create_task(self._send_listing_info())
                 else:
-                    asyncio.get_event_loop().create_task(self._get_starting_data(body['data_id']))
+                    loop.create_task(self._get_starting_data(body['data_id']))
             elif body['action'] == Controller.ACTION_TYPE_SUB:
-                asyncio.get_event_loop().create_task(self._subscribe(body['data_id']))
+                loop.create_task(self._subscribe(body['data_id']))
             elif body['action'] == Controller.ACTION_TYPE_UNSUB:
                 self._unsubscribe(body['data_id'])
 
-        await queue.consume(main_callback)
+        await queue.consume(callback)
         print('Start consuming queue "{0}"...'.format(self._queue_for_consume))
 
     def _is_not_valid(self, message):
@@ -136,7 +138,7 @@ class Controller:
             asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_ACTION))
             return True
         elif 'data_id' not in message:
-            asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_DATA_ID))
+            asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_DATA_TYPE))
             return True
         elif message['action'] not in (Controller.ACTION_TYPE_SUB, Controller.ACTION_TYPE_UNSUB,
                                        Controller.ACTION_TYPE_STARTING):
@@ -146,6 +148,12 @@ class Controller:
             # data_id validation
             fragments_id = message['data_id'].split('.')
 
+            if fragments_id[0] not in (DATA_TYPE_DEPTH, DATA_TYPE_TICKER, DATA_TYPE_LISTING, DATA_TYPE_CANDLES):
+                asyncio.get_event_loop().create_task(
+                    self._send_error_in_exchange(message, Controller.ERR_BAD_DATA_TYPE)
+                )
+                return True
+
             if fragments_id[0] == DATA_TYPE_LISTING:
                 if message['action'] != Controller.ACTION_TYPE_STARTING:
                     asyncio.get_event_loop().create_task(
@@ -154,10 +162,10 @@ class Controller:
                     return True
                 return False
 
-            if (((fragments_id[0] == DATA_TYPE_TICKER or fragments_id[0] == DATA_TYPE_DEPTH) and len(fragments_id) != 3)
-                    or (fragments_id[0] == DATA_TYPE_CANDLES and len(fragments_id) != 4)):
-                asyncio.get_event_loop().create_task(self._send_error_in_exchange(
-                    message, Controller.ERR_BAD_DATA_ID))
+            if fragments_id[0] == DATA_TYPE_CANDLES and len(fragments_id) < 4:
+                asyncio.get_event_loop().create_task(
+                    self._send_error_in_exchange(message, Controller.ERR_BAD_TIME_FRAME)
+                )
                 return True
 
             exchange, pair = fragments_id[1], fragments_id[2]
@@ -193,7 +201,7 @@ class Controller:
         for name in names_access_exchanges:
             current_exchange = self._factory.create_exchange(name)
             pairs_tasks.append(current_exchange.get_access_symbols())
-            listing[name] = [current_exchange.access_time_frames, ]
+            listing[name] = [current_exchange.access_timeframes, ]
 
         pairs = await asyncio.gather(*pairs_tasks)
         for ind, name in enumerate(names_access_exchanges):
@@ -206,35 +214,35 @@ class Controller:
 
         routing_key = f'starting.{data_id}'
         fragments_id = data_id.split('.')
-
         data_type, exchange, pair = fragments_id[0], fragments_id[1], fragments_id[2]
         exchange = self._factory.create_exchange(exchange)
 
+        loop = asyncio.get_event_loop()
         if data_type == DATA_TYPE_CANDLES:
             time_frame = fragments_id[3]
-            await self._send_data_in_exchange(routing_key, await exchange.get_starting_candles(pair, time_frame))
+            loop.create_task(exchange.get_starting_candles(routing_key, pair, time_frame))
         elif data_type == DATA_TYPE_DEPTH:
-            await self._send_data_in_exchange(routing_key, await exchange.get_starting_depth(pair))
+            loop.create_task(exchange.get_starting_depth(routing_key, pair))
         elif data_type == DATA_TYPE_TICKER:
-            await self._send_data_in_exchange(routing_key, await exchange.get_starting_ticker(pair))
+            loop.create_task(exchange.get_starting_ticker(routing_key, pair))
 
     async def _subscribe(self, data_id):
         """Method for permanent get update specific market data"""
 
-        fragments_id = data_id.split('.')
-        task_type, exchange, pair = fragments_id[0], fragments_id[1], fragments_id[2]
-        exchange = self._factory.create_exchange(exchange)
         routing_key = f'update.{data_id}'
+        fragments_id = data_id.split('.')
+        data_type, exchange, pair = fragments_id[0], fragments_id[1], fragments_id[2]
+        exchange = self._factory.create_exchange(exchange)
         if data_id in self._futures:
             return
 
         loop = asyncio.get_event_loop()
-        if task_type == DATA_TYPE_CANDLES:
+        if data_type == DATA_TYPE_CANDLES:
             time_frame = fragments_id[3]
             self._futures[data_id] = loop.create_task(exchange.subscribe_candles(routing_key, pair, time_frame))
-        elif task_type == DATA_TYPE_DEPTH:
+        elif data_type == DATA_TYPE_DEPTH:
             self._futures[data_id] = loop.create_task(exchange.subscribe_depth(routing_key, pair))
-        elif task_type == DATA_TYPE_TICKER:
+        elif data_type == DATA_TYPE_TICKER:
             self._futures[data_id] = loop.create_task(exchange.subscribe_ticker(routing_key, pair))
 
     def _unsubscribe(self, data_id):
@@ -253,10 +261,10 @@ class Controller:
         data = json.dumps(data)
         await self._exchanger.publish(aio_pika.Message(body=data.encode()), routing_key=queue_name)
 
-    async def _send_error_in_exchange(self, error, message):
+    async def _send_error_in_exchange(self, error_place, message):
         """Send error to exchanger with error routing_key"""
         message = dict(
-            error=error,
+            error_place=error_place,
             message=message,
         )
         await self._send_data_in_exchange(queue_name=self._queue_for_error, data=message)

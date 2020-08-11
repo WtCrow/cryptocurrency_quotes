@@ -6,20 +6,17 @@ import json
 
 
 class Bittrex(BaseExchange):
-    """Connector to Bittrex (Use api v3 (beta))"""
+    """Connector to Bittrex (Use api v3)"""
 
     name = 'Bittrex'
 
-    def __init__(self, exchanger):
-        super().__init__(exchanger)
+    def __init__(self, mq_exchanger):
+        super().__init__(mq_exchanger)
         self._root_url_rest = 'https://api.bittrex.com'
 
         # Key this unification view for this MS, value dict this variable for API exchange
-        self._time_frame_translate = dict([('M1', 'MINUTE_1'), ('M5', 'MINUTE_5'), ('H1', 'HOUR_1'), ('D1', 'DAY_1')])
-        self.access_time_frames = list(self._time_frame_translate.keys())
-
-        # Time for repeat if use polling
-        self._time_out = 3
+        self._timeframe_translate = dict([('M1', 'MINUTE_1'), ('M5', 'MINUTE_5'), ('H1', 'HOUR_1'), ('D1', 'DAY_1')])
+        self.access_timeframes = list(self._timeframe_translate.keys())
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
@@ -51,7 +48,7 @@ class Bittrex(BaseExchange):
 
                 return symbols
 
-    async def _get_starting_ticker(self, symbol):
+    async def _get_starting_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
             url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/ticker'
             async with session.get(url) as response:
@@ -69,12 +66,12 @@ class Bittrex(BaseExchange):
                 """
 
                 bid_ask = (bid_ask['bidRate'], bid_ask['askRate'])
-                return bid_ask
+                await self._send_data_in_exchange(queue_name, bid_ask)
 
-    async def _get_starting_candles(self, symbol, time_frame):
+    async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             url_rest = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
-                f'/candles?CandleInterval={self._time_frame_translate[time_frame]}'
+                f'/candles?CandleInterval={self._timeframe_translate[time_frame]}'
             async with session.get(url_rest) as response:
                 response = await response.text()
 
@@ -101,9 +98,9 @@ class Bittrex(BaseExchange):
                     candles.append((item['open'], item['high'], item['low'], item['close'], item['volume'],
                                     time))
 
-                return candles
+                await self._send_data_in_exchange(queue_name, candles)
 
-    async def _get_starting_depth(self, symbol):
+    async def _get_starting_depth(self, queue_name, symbol):
         async with ClientSession() as session:
             url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}/orderbook'
             async with session.get(url) as response:
@@ -132,7 +129,7 @@ class Bittrex(BaseExchange):
                 bids = [(item['rate'], item['quantity']) for item in bid_ask['bid']][:20]
                 asks.reverse()
 
-                return bids, asks
+                await self._send_data_in_exchange(queue_name, (bids, asks))
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
@@ -154,12 +151,12 @@ class Bittrex(BaseExchange):
 
                     bid_ask = (bid_ask['bidRate'], bid_ask['askRate'])
                     await self._send_data_in_exchange(queue_name, bid_ask)
-                    await asyncio.sleep(self._time_out)
+                    await asyncio.sleep(self.time_out)
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             url_rest = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
-                f'/candles?CandleInterval={self._time_frame_translate[time_frame]}'
+                f'/candles?CandleInterval={self._timeframe_translate[time_frame]}'
             while True:
                 async with session.get(url_rest) as response:
                     response = await response.text()
@@ -185,7 +182,7 @@ class Bittrex(BaseExchange):
                     candle = (candle['open'], candle['high'], candle['low'], candle['close'], candle['volume'], time)
 
                     await self._send_data_in_exchange(queue_name, candle)
-                    await asyncio.sleep(self._time_out)
+                    await asyncio.sleep(self.time_out)
 
     async def _subscribe_depth(self, queue_name, symbol):
         async with ClientSession() as session:
@@ -218,7 +215,7 @@ class Bittrex(BaseExchange):
                     asks.reverse()
 
                     await self._send_data_in_exchange(queue_name, (bids, asks))
-                    await asyncio.sleep(self._time_out)
+                    await asyncio.sleep(self.time_out)
 
     async def _symbol_translate(self, symbol, session):
         url = f'{self._root_url_rest}/v3/markets'

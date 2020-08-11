@@ -5,29 +5,26 @@ import json
 
 
 class Binance(BaseExchange):
-    """Connector to Binance"""
+    """Connector to binance.com"""
 
     name = 'Binance'
 
-    def __init__(self, exchanger):
-        super().__init__(exchanger)
+    def __init__(self, mq_exchanger):
+        super().__init__(mq_exchanger)
         self._max_candles = 1000
 
         self._root_url_ws = 'wss://stream.binance.com:9443/ws'
         self._root_url_rest = 'https://api.binance.com'
 
-        # Key this unification view for this MS, value dict this variable for API exchange
-        self._time_frame_translate = dict([('M1', '1m'), ('M5', '5m'), ('M15', '15m'), ('M30', '30m'),
-                                           ('H1', '1h'), ('H4', '4h'), ('D1', '1d'), ('1W', '1w')])
-        self.access_time_frames = list(self._time_frame_translate.keys())
-
-        # Time for repeat if use polling
-        self._time_out = 2
+        # Key this unification view for this MS, value dict this variable for request to API exchange
+        self._timeframe_translate = dict([('M1', '1m'), ('M5', '5m'), ('M15', '15m'), ('M30', '30m'),
+                                          ('H1', '1h'), ('H4', '4h'), ('D1', '1d'), ('1W', '1w')])
+        self.access_timeframes = list(self._timeframe_translate.keys())
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            rest_url = f'{self._root_url_rest}/api/v3/ticker/price'
-            async with session.get(rest_url) as response:
+            url = f'{self._root_url_rest}/api/v3/ticker/price'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -43,16 +40,12 @@ class Binance(BaseExchange):
                   }
                 ]
                 """
-
-                try:
-                    response = json.loads(response)
-                    symbols = [item['symbol'] for item in response]
-                except (KeyError, TypeError, json.JSONDecodeError):
-                    return []
+                response = json.loads(response)
+                symbols = [item['symbol'] for item in response]
 
                 return symbols
 
-    async def _get_starting_ticker(self, symbol):
+    async def _get_starting_ticker(self, queue_name, symbol):
         url_rest = f'{self._root_url_rest}/api/v3/ticker/bookTicker?symbol={symbol}'
         async with ClientSession() as session:
             async with session.get(url_rest) as response:
@@ -69,13 +62,13 @@ class Binance(BaseExchange):
                 }
                 """
                 ticker = json.loads(response)
-                return ticker['bidPrice'], ticker['askPrice']
+                await self._send_data_in_exchange(queue_name, (ticker['bidPrice'], ticker['askPrice']))
 
-    async def _get_starting_candles(self, symbol, time_frame):
+    async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            rest_url = f'{self._root_url_rest}/api/v1/klines?symbol={symbol}' \
-                f'&interval={self._time_frame_translate[time_frame]}&limit={self._max_candles}'
-            async with session.get(rest_url) as response:
+            url = f'{self._root_url_rest}/api/v1/klines?symbol={symbol}' \
+                f'&interval={self._timeframe_translate[time_frame]}&limit={self._max_candles}'
+            async with session.get(url) as response:
                 response = await response.text()
                 array_candles = json.loads(response)
 
@@ -95,21 +88,21 @@ class Binance(BaseExchange):
                     "1756.87402397",    // Taker buy base asset volume
                     "28.46694368",      // Taker buy quote asset volume
                     "17928899.62484339" // Ignore.
-                  ]
+                  ],
+                  ...
                 ]
                 """
-
                 candles = []
                 for item in array_candles:
                     time = int(item[0]) // 1000
                     candles.append((item[1], item[2], item[3], item[4], item[5], time))
 
-                return candles
+                await self._send_data_in_exchange(queue_name, candles)
 
-    async def _get_starting_depth(self, symbol):
-        url_rest = f'{self._root_url_rest}/api/v1/depth?symbol={symbol}&limit=20'
+    async def _get_starting_depth(self, queue_name, symbol):
+        url = f'{self._root_url_rest}/api/v1/depth?symbol={symbol}&limit=20'
         async with ClientSession() as session:
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format:
@@ -136,12 +129,12 @@ class Binance(BaseExchange):
                 bids = [(item[0], item[1]) for item in bid_ask['bids']]
                 asks.reverse()
 
-                return bids, asks
+                await self._send_data_in_exchange(queue_name, (bids, asks))
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            ws_url = f'{self._root_url_ws}/{symbol.lower()}@ticker'
-            async with session.ws_connect(ws_url) as ws:
+            url = f'{self._root_url_ws}/{symbol.lower()}@ticker'
+            async with session.ws_connect(url) as ws:
                 while True:
                     response = await ws.receive()
                     data = json.loads(response.data)
@@ -180,9 +173,8 @@ class Binance(BaseExchange):
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            symbol = symbol.lower()
-            url_ws = f'{self._root_url_ws}/{symbol}@kline_{self._time_frame_translate[time_frame]}'
-            async with session.ws_connect(url_ws) as ws:
+            url = f'{self._root_url_ws}/{symbol.lower()}@kline_{self._timeframe_translate[time_frame]}'
+            async with session.ws_connect(url) as ws:
                 while True:
                     response = await ws.receive()
 
@@ -216,8 +208,8 @@ class Binance(BaseExchange):
 
                     candle_data = json.loads(response.data)['k']
                     time = int(candle_data['t']) // 1000
-                    candle = (candle_data['o'], candle_data['h'], candle_data['l'], candle_data['c'],
-                              candle_data['v'], time)
+                    candle = (candle_data['o'], candle_data['h'], candle_data['l'], candle_data['c'], candle_data['v'],
+                              time)
 
                     await self._send_data_in_exchange(queue_name, candle)
 
@@ -253,4 +245,4 @@ class Binance(BaseExchange):
                     asks.reverse()
 
                     await self._send_data_in_exchange(queue_name, (bids, asks))
-                    await asyncio.sleep(self._time_out)
+                    await asyncio.sleep(self.time_out)

@@ -14,10 +14,10 @@ class ExchangeNotExistError(Exception):
 class ExchangeFactory:
     """Class for create exchanges."""
 
-    def __init__(self, exchanger):
-        self.exchanger = exchanger
+    def __init__(self, mq_exchanger):
+        self.exchanger = mq_exchanger
         # Classes all exchanges
-        self._exchanges = [Binance, HitBTC, HuobiGlobal, Bittrex, OkCoin, OkEx]
+        self._exchanges = [Binance, ]
         # already created exchanges instance
         self._instances_exchanges = dict()
 
@@ -35,7 +35,7 @@ class ExchangeFactory:
         if not self._instances_exchanges.get(name):
             exchange = list(filter(lambda item: item.name == name, self._exchanges))
             if exchange:
-                self._instances_exchanges[name] = exchange[0](exchanger=self.exchanger)
+                self._instances_exchanges[name] = exchange[0](mq_exchanger=self.exchanger)
             else:
                 raise ExchangeNotExistError(name)
         return self._instances_exchanges[name]

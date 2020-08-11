@@ -11,18 +11,18 @@ class HuobiGlobal(BaseExchange):
 
     name = 'Huobi_Global'
 
-    def __init__(self, exchanger):
-        super().__init__(exchanger)
+    def __init__(self, mq_exchanger):
+        super().__init__(mq_exchanger)
         self._max_candle = 2000
 
         self._root_url_rest = 'http://api.huobi.pro'
         self._root_url_ws = 'wss://api.huobi.pro/ws'
 
         # Key this unification view for this MS, value dict this variable for API exchange
-        self._time_frame_translate = dict([('M1', '1min'), ('M5', '5min'), ('M15', '15min'), ('M30', '30min'),
-                                           ('H1', '60min'), ('D1', '1day'), ('1W', '1week'), ('1M', '1mon'),
-                                           ('1Y', '1year')])
-        self.access_time_frames = list(self._time_frame_translate.keys())
+        self._timeframe_translate = dict([('M1', '1min'), ('M5', '5min'), ('M15', '15min'), ('M30', '30min'),
+                                          ('H1', '60min'), ('D1', '1day'), ('1W', '1week'), ('1M', '1mon'),
+                                          ('1Y', '1year')])
+        self.access_timeframes = list(self._timeframe_translate.keys())
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
@@ -59,7 +59,7 @@ class HuobiGlobal(BaseExchange):
 
                 return symbols
 
-    async def _get_starting_ticker(self, symbol):
+    async def _get_starting_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
             rest_url = f'{self._root_url_rest}/market/detail/merged?symbol={symbol.lower()}'
             async with session.get(rest_url) as response:
@@ -84,12 +84,12 @@ class HuobiGlobal(BaseExchange):
                 response = json.loads(response)['tick']
                 ticker = str(response['bid'][0]), str(response['ask'][0])
 
-                return ticker
+                await self._send_data_in_exchange(queue_name, ticker)
 
-    async def _get_starting_candles(self, symbol, time_frame):
+    async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             url_rest = f'{self._root_url_rest}/market/history/kline?symbol={symbol.lower()}' \
-                f'&period={self._time_frame_translate[time_frame]}&size={self._max_candle}'
+                f'&period={self._timeframe_translate[time_frame]}&size={self._max_candle}'
             async with session.get(url_rest) as response:
                 response = await response.text()
                 candles = []
@@ -116,9 +116,9 @@ class HuobiGlobal(BaseExchange):
                     candles.append((str(item['open']), str(item['high']), str(item['low']),
                                     str(item['close']), str(item['vol']), time))
                 candles.reverse()
-                return candles
+                await self._send_data_in_exchange(queue_name, candles)
 
-    async def _get_starting_depth(self, symbol):
+    async def _get_starting_depth(self, queue_name, symbol):
         async with ClientSession() as session:
             rest_url = f'{self._root_url_rest}/market/depth?symbol={symbol.lower()}&type=step1'
             async with session.get(rest_url) as response:
@@ -140,7 +140,7 @@ class HuobiGlobal(BaseExchange):
                 asks = [(str(item[0]), str(item[1])) for item in response['asks']][:20]
                 asks.reverse()
 
-                return bids, asks
+                await self._send_data_in_exchange(queue_name, (bids, asks))
 
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
@@ -193,7 +193,7 @@ class HuobiGlobal(BaseExchange):
 
                 id_ = hashlib.md5("huobi_candle".encode('utf-8')).hexdigest()
                 json_params = {
-                    "sub": f"market.{symbol.lower()}.kline.{self._time_frame_translate[time_frame]}",
+                    "sub": f"market.{symbol.lower()}.kline.{self._timeframe_translate[time_frame]}",
                     "id": id_
                 }
                 await ws.send_json(json_params)

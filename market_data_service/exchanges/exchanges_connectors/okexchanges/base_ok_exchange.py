@@ -9,25 +9,22 @@ import zlib
 class BaseOkExchange(BaseExchange):
     """API OkCoin and OkEx
 
-    API okcoin and okex differ only in endpoints, so i create one base class
+    API okcoin and okex differ only in root url, so i create one base class
 
     """
 
-    def __init__(self, ws_url, rest_url, exchanger):
-        super().__init__(exchanger)
+    def __init__(self, ws_url, rest_url, mq_exchanger):
+        super().__init__(mq_exchanger)
         self._max_candle = 200
 
         self._root_url_ws = ws_url
         self._root_url_rest = rest_url
 
         # Key this unification view for this MS, value dict this variable for API exchange
-        self._time_frame_translate = dict([('M1', '60'), ('M3', '180'), ('M5', '300'), ('M15', '900'),
-                                           ('M30', '1800'), ('H1', '3600'), ('H2', '7200'), ('H4', '14400'),
-                                           ('H12', '43200'), ('D1', '86400'), ('1W', '604800')])
-        self.access_time_frames = list(self._time_frame_translate.keys())
-
-        # Time for repeat if use polling
-        self._time_out = 3
+        self._timeframe_translate = dict([('M1', '60'), ('M3', '180'), ('M5', '300'), ('M15', '900'),
+                                          ('M30', '1800'), ('H1', '3600'), ('H2', '7200'), ('H4', '14400'),
+                                          ('H12', '43200'), ('D1', '86400'), ('1W', '604800')])
+        self.access_timeframes = list(self._timeframe_translate.keys())
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
@@ -65,7 +62,7 @@ class BaseOkExchange(BaseExchange):
 
                 return symbols
 
-    async def _get_starting_ticker(self, symbol):
+    async def _get_starting_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
             url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}/ticker'
             async with session.get(url_rest) as response:
@@ -109,12 +106,12 @@ class BaseOkExchange(BaseExchange):
 
                 data = json.loads(response)
                 bid_ask = (data['best_bid'], data['best_ask'])
-                return bid_ask
+                await self._send_data_in_exchange(queue_name, bid_ask)
 
-    async def _get_starting_candles(self, symbol, time_frame):
+    async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
-                f'/candles?granularity={self._time_frame_translate[time_frame]}'
+                f'/candles?granularity={self._timeframe_translate[time_frame]}'
             async with session.get(url_rest) as response:
                 response = await response.text()
                 data = json.loads(response)
@@ -147,9 +144,9 @@ class BaseOkExchange(BaseExchange):
                     candles.append((item[1], item[2], item[3], item[4], item[5], time))
                 candles.reverse()
 
-                return candles
+                await self._send_data_in_exchange(queue_name, candles)
 
-    async def _get_starting_depth(self, symbol):
+    async def _get_starting_depth(self, queue_name, symbol):
         async with ClientSession() as session:
             url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
                 f'/book?size=20&'
@@ -211,7 +208,7 @@ class BaseOkExchange(BaseExchange):
                 asks = [(item[0], item[1]) for item in bid_ask['asks']]
                 bids = [(item[0], item[1]) for item in bid_ask['bids']]
                 asks.reverse()
-                return bids, asks
+                await self._send_data_in_exchange(queue_name, (bids, asks))
 
     async def _subscribe_ticker(self, queue_name, symbol):
         ping_task = None
@@ -278,7 +275,7 @@ class BaseOkExchange(BaseExchange):
                     json_params = {
                         "op": "subscribe",
                         "args": [
-                            f"spot/candle{self._time_frame_translate[time_frame]}s:"
+                            f"spot/candle{self._timeframe_translate[time_frame]}s:"
                             f"{(await self._symbol_translate(symbol, session))}"
                         ]
                     }
@@ -393,7 +390,7 @@ class BaseOkExchange(BaseExchange):
                     bids = [(item[0], item[1]) for item in bid_ask['bids']]
                     asks.reverse()
                     await self._send_data_in_exchange(queue_name, (bids, asks))
-                    await asyncio.sleep(self._time_out)
+                    await asyncio.sleep(self.time_out)
 
     async def _symbol_translate(self, symbol, session):
         """Translate symbol in format for API"""
