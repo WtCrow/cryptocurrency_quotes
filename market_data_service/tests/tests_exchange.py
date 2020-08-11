@@ -23,7 +23,7 @@ class TestShading:
             # Test queue and variable for determine in child classes
             self.test_queue = 'test_queue'
             self.symbol = None
-            self.time_out = 10
+            self.wait_task_time = 10
 
             self.is_print_result = False
 
@@ -244,7 +244,7 @@ class TestShading:
             self.assertTrue(float(depth_item[1]) >= 0, f'{float(depth_item[1])} < 0')
 
         async def _stop_through(self, task):
-            await asyncio.sleep(self.time_out)
+            await asyncio.sleep(self.wait_task_time)
             task.cancel()
             self.loop.stop()
 
@@ -287,7 +287,6 @@ class HuobiGlobalTests(TestShading.BaseExchangeTests):
         self.symbol = 'BTCUSDT'
         self.exchange = HuobiGlobal(None)
         self.is_print_result = True
-        # TODO pong message raise error
 
 
 class OkCoinTests(TestShading.BaseExchangeTests):

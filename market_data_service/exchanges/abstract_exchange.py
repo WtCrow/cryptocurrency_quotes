@@ -33,6 +33,7 @@ class BaseExchange:
     def __init__(self, mq_exchanger):
         self.exchanger = mq_exchanger
         self.time_out = 2
+        self.request_candles = 1000
 
     @_catch_error_decorator_factory(empty_data=[])
     async def get_access_symbols(self):

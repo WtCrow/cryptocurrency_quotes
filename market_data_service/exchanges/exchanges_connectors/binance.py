@@ -5,13 +5,12 @@ import json
 
 
 class Binance(BaseExchange):
-    """Connector to binance.com"""
+    """Connector to Binance"""
 
     name = 'Binance'
 
     def __init__(self, mq_exchanger):
         super().__init__(mq_exchanger)
-        self._max_candles = 1000
 
         self._root_url_ws = 'wss://stream.binance.com:9443/ws'
         self._root_url_rest = 'https://api.binance.com'
@@ -67,7 +66,7 @@ class Binance(BaseExchange):
     async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             url = f'{self._root_url_rest}/api/v1/klines?symbol={symbol}' \
-                f'&interval={self._timeframe_translate[time_frame]}&limit={self._max_candles}'
+                f'&interval={self._timeframe_translate[time_frame]}&limit={self.request_candles}'
             async with session.get(url) as response:
                 response = await response.text()
                 array_candles = json.loads(response)
@@ -123,7 +122,6 @@ class Binance(BaseExchange):
                   ]
                 }
                 """
-
                 bid_ask = json.loads(response)
                 asks = [(item[0], item[1]) for item in bid_ask['asks']]
                 bids = [(item[0], item[1]) for item in bid_ask['bids']]
@@ -167,7 +165,6 @@ class Binance(BaseExchange):
                       "n": 18151          // Total number of trades
                     }
                     """
-
                     bid_ask = (data['b'], data['a'])
                     await self._send_data_in_exchange(queue_name, bid_ask)
 
@@ -205,7 +202,6 @@ class Binance(BaseExchange):
                       }
                     }
                     """
-
                     candle_data = json.loads(response.data)['k']
                     time = int(candle_data['t']) // 1000
                     candle = (candle_data['o'], candle_data['h'], candle_data['l'], candle_data['c'], candle_data['v'],
@@ -238,7 +234,6 @@ class Binance(BaseExchange):
                       ]
                     }
                     """
-
                     bid_ask = json.loads(response)
                     asks = [(item[0], item[1]) for item in bid_ask['asks']]
                     bids = [(item[0], item[1]) for item in bid_ask['bids']]

@@ -15,7 +15,7 @@ class BaseOkExchange(BaseExchange):
 
     def __init__(self, ws_url, rest_url, mq_exchanger):
         super().__init__(mq_exchanger)
-        self._max_candle = 200
+        self._max_candle = 1000
 
         self._root_url_ws = ws_url
         self._root_url_rest = rest_url
@@ -28,8 +28,8 @@ class BaseOkExchange(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/instruments/ticker'
-            async with session.get(url_rest) as response:
+            url = f'{self._root_url_rest}/instruments/ticker'
+            async with session.get(url) as response:
                 response = await response.text()
                 response = json.loads(response)
 
@@ -54,18 +54,13 @@ class BaseOkExchange(BaseExchange):
                     }
                 ]
                 """
-
-                try:
-                    symbols = [item['instrument_id'].replace('-', '') for item in response]
-                except KeyError and TypeError and json.JSONDecodeError:
-                    return []
-
+                symbols = [item['product_id'].replace('-', '') for item in response]
                 return symbols
 
     async def _get_starting_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}/ticker'
-            async with session.get(url_rest) as response:
+            url = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}/ticker'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -103,16 +98,14 @@ class BaseOkExchange(BaseExchange):
                     }
                 ]
                 """
-
                 data = json.loads(response)
-                bid_ask = (data['best_bid'], data['best_ask'])
-                await self._send_data_in_exchange(queue_name, bid_ask)
+                await self._send_data_in_exchange(queue_name, (data['best_bid'], data['best_ask']))
 
     async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
+            url = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
                 f'/candles?granularity={self._timeframe_translate[time_frame]}'
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
                 data = json.loads(response)
 
@@ -137,7 +130,6 @@ class BaseOkExchange(BaseExchange):
                     ]
                 ]
                 """
-
                 candles = []
                 for item in data:
                     time = int(datetime.datetime.strptime(item[0], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp())
@@ -148,9 +140,9 @@ class BaseOkExchange(BaseExchange):
 
     async def _get_starting_depth(self, queue_name, symbol):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
+            url = f'{self._root_url_rest}/instruments/{(await self._symbol_translate(symbol, session))}' \
                 f'/book?size=20&'
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
                 bid_ask = json.loads(response)
 
@@ -212,11 +204,9 @@ class BaseOkExchange(BaseExchange):
 
     async def _subscribe_ticker(self, queue_name, symbol):
         ping_task = None
-        response = None
         try:
             async with ClientSession() as session:
                 async with session.ws_connect(self._root_url_ws) as ws:
-
                     json_params = {"op": "subscribe",
                                    "args": [f"spot/ticker:{await self._symbol_translate(symbol, session)}"]}
                     await ws.send_json(json_params)
@@ -224,9 +214,8 @@ class BaseOkExchange(BaseExchange):
                     response = await ws.receive()
                     data = self._inflate(response.data).decode('utf-8')
                     data = dict(json.loads(data))
-                    if 'event' not in data.keys() or data['event'] != 'subscribe':
-                        await self._send_error_message(queue_name, response)
-                        return
+                    if data.get('event') != 'subscribe':
+                        raise Exception(f'event != subscribe. response == {data}')
 
                     ping_task = asyncio.create_task(self._ping_timer(ws))
 
@@ -256,19 +245,15 @@ class BaseOkExchange(BaseExchange):
                                 }]
                          }
                         """
-
                         data = json.loads(data)['data'][0]
-                        bid_ask = (data['best_bid'], data['best_ask'])
-                        await self._send_data_in_exchange(queue_name, bid_ask)
-        except (asyncio.CancelledError, KeyError, TypeError, json.JSONDecodeError) as e:
+                        await self._send_data_in_exchange(queue_name, (data['best_bid'], data['best_ask']))
+        except Exception as e:
             if ping_task:
                 ping_task.cancel()
-            if type(e).__name__ != asyncio.CancelledError.__name__:
-                await self._send_error_message(queue_name, response)
+            raise e
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         ping_task = None
-        response = None
         try:
             async with ClientSession() as session:
                 async with session.ws_connect(self._root_url_ws) as ws:
@@ -284,9 +269,8 @@ class BaseOkExchange(BaseExchange):
                     response = await ws.receive()
                     data = self._inflate(response.data).decode('utf-8')
                     data = json.loads(data)
-                    if 'event' not in data.keys() or data['event'] != 'subscribe':
-                        await self._send_error_message(queue_name, response)
-                        return
+                    if data.get('event') != 'subscribe':
+                        raise Exception(f'event != subscribe. response == {data}')
 
                     ping_task = asyncio.create_task(self._ping_timer(ws))
 
@@ -314,17 +298,15 @@ class BaseOkExchange(BaseExchange):
                                     ,"instrument_id":"ETH-USDT"
                             }]}
                         """
-
                         data = json.loads(data)['data'][0]['candle']
                         time = int(datetime.datetime.strptime(data[0], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp())
                         candle = (data[1], data[2], data[3], data[4], data[5], time)
 
                         await self._send_data_in_exchange(queue_name, candle)
-        except (asyncio.CancelledError, KeyError, TypeError, json.JSONDecodeError) as e:
+        except Exception as e:
             if ping_task:
                 ping_task.cancel()
-            if type(e).__name__ != asyncio.CancelledError.__name__:
-                await self._send_error_message(queue_name, response)
+            raise e
 
     async def _subscribe_depth(self, queue_name, symbol):
         async with ClientSession() as session:
@@ -385,7 +367,6 @@ class BaseOkExchange(BaseExchange):
                         "timestamp":"2019-03-20T03:55:37.888Z"
                     }
                     """
-
                     asks = [(item[0], item[1]) for item in bid_ask['asks']]
                     bids = [(item[0], item[1]) for item in bid_ask['bids']]
                     asks.reverse()
@@ -423,7 +404,6 @@ class BaseOkExchange(BaseExchange):
                 }
             ]
             """
-
             for item in response:
                 if item['product_id'].replace('-', '') == symbol:
                     return item['product_id']
@@ -436,10 +416,10 @@ class BaseOkExchange(BaseExchange):
         return inflated
 
     @staticmethod
-    async def _ping_timer(ws, time_out=20):
+    async def _ping_timer(ws, ping_time_out=20):
         try:
             while True:
-                await asyncio.sleep(time_out)
+                await asyncio.sleep(ping_time_out)
                 await ws.send_str('ping')
         except asyncio.CancelledError:
-            return
+            pass

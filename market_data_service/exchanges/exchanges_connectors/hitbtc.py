@@ -13,7 +13,6 @@ class HitBTC(BaseExchange):
 
     def __init__(self, mq_exchanger):
         super().__init__(mq_exchanger)
-        self._max_candle = 1000
 
         self._root_url_ws = 'wss://api.hitbtc.com/api/2/ws'
         self._root_url_rest = 'https://api.hitbtc.com'
@@ -23,8 +22,8 @@ class HitBTC(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            rest_url = f'{self._root_url_rest}/api/2/public/symbol'
-            async with session.get(rest_url) as response:
+            url = f'{self._root_url_rest}/api/2/public/symbol'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format:
@@ -43,19 +42,14 @@ class HitBTC(BaseExchange):
                 ],
                 ...
                 """
-
-                try:
-                    response = json.loads(response)
-                    symbols = [item['id'] for item in response]
-                except (KeyError, TypeError, json.JSONDecodeError):
-                    return []
-
+                response = json.loads(response)
+                symbols = [item['id'] for item in response]
                 return symbols
 
     async def _get_raw_data_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/api/2/public/ticker/{symbol}'
-            async with session.get(url_rest) as response:
+            url = f'{self._root_url_rest}/api/2/public/ticker/{symbol}'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -73,14 +67,13 @@ class HitBTC(BaseExchange):
                     "symbol": "ETHBTC"
                 }
                 """
-
                 ticker = json.loads(response)
                 await self._send_data_in_exchange(queue_name, ticker)
 
     async def _get_starting_ticker(self, queue_name, symbol):
-        url_rest = f'{self._root_url_rest}/api/2/public/ticker/{symbol}'
+        url = f'{self._root_url_rest}/api/2/public/ticker/{symbol}'
         async with ClientSession() as session:
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -98,14 +91,13 @@ class HitBTC(BaseExchange):
                     "symbol": "ETHBTC"
                 }
                 """
-
                 ticker = json.loads(response)
                 await self._send_data_in_exchange(queue_name, (ticker['bid'], ticker['ask']))
 
     async def _get_starting_candles(self, queue_name, symbol, time_frame):
-        url_rest = f'{self._root_url_rest}/api/2/public/candles/{symbol}?period={time_frame}'
+        url = f'{self._root_url_rest}/api/2/public/candles/{symbol}?period={time_frame}'
         async with ClientSession() as session:
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -131,7 +123,6 @@ class HitBTC(BaseExchange):
                   }
                 ]
                 """
-
                 formatted_candles = []
                 candles = json.loads(response)
                 for candle in candles:
@@ -141,9 +132,9 @@ class HitBTC(BaseExchange):
                 await self._send_data_in_exchange(queue_name, formatted_candles)
 
     async def _get_starting_depth(self, queue_name, symbol):
-        url_rest = f'{self._root_url_rest}/api/2/public/orderbook/{symbol}?limit=20'
+        url = f'{self._root_url_rest}/api/2/public/orderbook/{symbol}?limit=20'
         async with ClientSession() as session:
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -172,7 +163,6 @@ class HitBTC(BaseExchange):
                   "timestamp": "2018-11-19T05:00:28.193Z"
                 }
                 """
-
                 bid_ask = json.loads(response)
                 asks = [(item['price'], item['size']) for item in bid_ask['ask']]
                 bids = [(item['price'], item['size']) for item in bid_ask['bid']]
@@ -182,7 +172,6 @@ class HitBTC(BaseExchange):
     async def _subscribe_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
             async with session.ws_connect(self._root_url_ws) as ws:
-
                 id_ = hashlib.md5("hitbtc_ticker".encode('utf-8')).hexdigest()
                 json_params = {
                     "method": "subscribeTicker",
@@ -220,7 +209,6 @@ class HitBTC(BaseExchange):
                       }
                     }
                     """
-
                     data = json.loads(response.data)['params']
                     bid_ask = (data['bid'], data['ask'])
                     await self._send_data_in_exchange(queue_name, bid_ask)
@@ -302,7 +290,6 @@ class HitBTC(BaseExchange):
                       }
                     }
                     """
-
                     data = json.loads(response.data)
                     candle = data['params']['data'][0]
                     time = int(datetime.strptime(candle['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ').timestamp())
@@ -311,10 +298,10 @@ class HitBTC(BaseExchange):
                     await self._send_data_in_exchange(queue_name, candle)
 
     async def _subscribe_depth(self, queue_name, symbol):
-        url_rest = f'{self._root_url_rest}/api/2/public/orderbook/{symbol}?limit=20'
+        url = f'{self._root_url_rest}/api/2/public/orderbook/{symbol}?limit=20'
         async with ClientSession() as session:
             while True:
-                async with session.get(url_rest) as response:
+                async with session.get(url) as response:
                     response = await response.text()
 
                     # Data format
@@ -350,4 +337,4 @@ class HitBTC(BaseExchange):
                     asks.reverse()
 
                     await self._send_data_in_exchange(queue_name, (bids, asks))
-                    await asyncio.sleep(self._time_out)
+                    await asyncio.sleep(self.time_out)

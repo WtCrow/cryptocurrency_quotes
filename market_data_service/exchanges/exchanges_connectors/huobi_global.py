@@ -13,7 +13,6 @@ class HuobiGlobal(BaseExchange):
 
     def __init__(self, mq_exchanger):
         super().__init__(mq_exchanger)
-        self._max_candle = 2000
 
         self._root_url_rest = 'http://api.huobi.pro'
         self._root_url_ws = 'wss://api.huobi.pro/ws'
@@ -26,8 +25,8 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_access_symbols(self):
         async with ClientSession() as session:
-            rest_url = f'{self._root_url_rest}/v1/common/symbols'
-            async with session.get(rest_url) as response:
+            url = f'{self._root_url_rest}/v1/common/symbols'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -50,19 +49,15 @@ class HuobiGlobal(BaseExchange):
                    {...}, ...
                   ]
                 """
-
-                try:
-                    response = json.loads(response)['data']
-                    symbols = [item['base-currency'].upper() + item['quote-currency'].upper() for item in response]
-                except (KeyError, TypeError, json.JSONDecodeError):
-                    return []
+                response = json.loads(response)['data']
+                symbols = [item['base-currency'].upper() + item['quote-currency'].upper() for item in response]
 
                 return symbols
 
     async def _get_starting_ticker(self, queue_name, symbol):
         async with ClientSession() as session:
-            rest_url = f'{self._root_url_rest}/market/detail/merged?symbol={symbol.lower()}'
-            async with session.get(rest_url) as response:
+            url = f'{self._root_url_rest}/market/detail/merged?symbol={symbol.lower()}'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -80,7 +75,6 @@ class HuobiGlobal(BaseExchange):
                     "ask": [ask1 price, volume]
                   }
                 """
-
                 response = json.loads(response)['tick']
                 ticker = str(response['bid'][0]), str(response['ask'][0])
 
@@ -88,11 +82,10 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/market/history/kline?symbol={symbol.lower()}' \
-                f'&period={self._timeframe_translate[time_frame]}&size={self._max_candle}'
-            async with session.get(url_rest) as response:
+            url = f'{self._root_url_rest}/market/history/kline?symbol={symbol.lower()}' \
+                f'&period={self._timeframe_translate[time_frame]}&size={self.request_candles}'
+            async with session.get(url) as response:
                 response = await response.text()
-                candles = []
                 response = json.loads(response)
 
                 # Data format
@@ -110,7 +103,7 @@ class HuobiGlobal(BaseExchange):
                   }
                 ]
                 """
-
+                candles = []
                 for item in response['data']:
                     time = int(item['id'])
                     candles.append((str(item['open']), str(item['high']), str(item['low']),
@@ -120,8 +113,8 @@ class HuobiGlobal(BaseExchange):
 
     async def _get_starting_depth(self, queue_name, symbol):
         async with ClientSession() as session:
-            rest_url = f'{self._root_url_rest}/market/depth?symbol={symbol.lower()}&type=step1'
-            async with session.get(rest_url) as response:
+            url = f'{self._root_url_rest}/market/depth?symbol={symbol.lower()}&type=step1'
+            async with session.get(url) as response:
                 response = await response.text()
 
                 # Data format
@@ -133,9 +126,7 @@ class HuobiGlobal(BaseExchange):
                     "asks":  [price , amount ] 
                   }
                 """
-
                 response = json.loads(response)['tick']
-
                 bids = [(str(item[0]), str(item[1])) for item in response['bids']][:20]
                 asks = [(str(item[0]), str(item[1])) for item in response['asks']][:20]
                 asks.reverse()
@@ -163,12 +154,10 @@ class HuobiGlobal(BaseExchange):
                         continue
                     elif 'status' in response.keys():
                         if response['status'] != 'ok':
-                            await self._send_error_message(queue_name, response)
-                            return
+                            raise Exception('Not "ok" status')
                         else:
                             continue
                     else:
-
                         # Data format
                         """
                         {
@@ -181,7 +170,6 @@ class HuobiGlobal(BaseExchange):
                               [[...], [...], ...]
                             }
                         """
-
                         tick = response['tick']
                         bid_ask = (str(tick['bids'][0][0]), str(tick['asks'][0][0]))
 
@@ -190,7 +178,6 @@ class HuobiGlobal(BaseExchange):
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
             async with session.ws_connect(self._root_url_ws) as ws:
-
                 id_ = hashlib.md5("huobi_candle".encode('utf-8')).hexdigest()
                 json_params = {
                     "sub": f"market.{symbol.lower()}.kline.{self._timeframe_translate[time_frame]}",
@@ -208,12 +195,10 @@ class HuobiGlobal(BaseExchange):
                         continue
                     elif 'status' in response.keys():
                         if response['status'] != 'ok':
-                            await self._send_error_message(queue_name, response)
-                            return
+                            raise Exception('Not "ok" status')
                         else:
                             continue
                     else:
-
                         # Data format
                         """
                         {'ch': 'market.btcusdt.kline.1min', 'ts': 1565437380662,
@@ -230,7 +215,6 @@ class HuobiGlobal(BaseExchange):
                                 }
                         }
                         """
-
                         response = response['tick']
                         time = response['id']
                         candle = (str(response['open']), str(response['high']), str(response['low']),
@@ -259,12 +243,10 @@ class HuobiGlobal(BaseExchange):
                         continue
                     elif 'status' in data.keys():
                         if data['status'] != 'ok':
-                            await self._send_error_message(queue_name, response)
-                            return
+                            raise Exception('Not "ok" status')
                         else:
                             continue
                     else:
-
                         # Data format
                         """
                         {
@@ -278,7 +260,6 @@ class HuobiGlobal(BaseExchange):
                               [[...], [...], ...]
                             }
                         """
-
                         bid_ask = data['tick']
                         bids = [(str(item[0]), str(item[1])) for item in bid_ask['bids']][:20]
                         asks = [(str(item[0]), str(item[1])) for item in bid_ask['asks']][:20]

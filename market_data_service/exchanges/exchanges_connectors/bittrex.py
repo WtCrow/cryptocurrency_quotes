@@ -39,12 +39,8 @@ class Bittrex(BaseExchange):
                   }
                 ]
                 """
-
-                try:
-                    response = json.loads(response)
-                    symbols = [item['symbol'].replace('-', '') for item in response]
-                except (KeyError, TypeError, json.JSONDecodeError):
-                    return []
+                response = json.loads(response)
+                symbols = [item['symbol'].replace('-', '') for item in response]
 
                 return symbols
 
@@ -64,16 +60,16 @@ class Bittrex(BaseExchange):
                   "askRate": "number (double)"
                 }
                 """
-
                 bid_ask = (bid_ask['bidRate'], bid_ask['askRate'])
                 await self._send_data_in_exchange(queue_name, bid_ask)
 
     async def _get_starting_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
+            url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
                 f'/candles?CandleInterval={self._timeframe_translate[time_frame]}'
-            async with session.get(url_rest) as response:
+            async with session.get(url) as response:
                 response = await response.text()
+                candles_data = json.loads(response)
 
                 # Data format
                 """
@@ -89,10 +85,7 @@ class Bittrex(BaseExchange):
                   }
                 ]
                 """
-
                 candles = []
-                candles_data = json.loads(response)
-
                 for item in candles_data:
                     time = int(datetime.datetime.strptime(item['startsAt'], "%Y-%m-%dT%H:%M:%fZ").timestamp())
                     candles.append((item['open'], item['high'], item['low'], item['close'], item['volume'],
@@ -124,7 +117,6 @@ class Bittrex(BaseExchange):
                   ]
                 }
                 """
-
                 asks = [(item['rate'], item['quantity']) for item in bid_ask['ask']][:20]
                 bids = [(item['rate'], item['quantity']) for item in bid_ask['bid']][:20]
                 asks.reverse()
@@ -148,17 +140,15 @@ class Bittrex(BaseExchange):
                       "askRate": "number (double)"
                     }
                     """
-
-                    bid_ask = (bid_ask['bidRate'], bid_ask['askRate'])
-                    await self._send_data_in_exchange(queue_name, bid_ask)
+                    await self._send_data_in_exchange(queue_name, (bid_ask['bidRate'], bid_ask['askRate']))
                     await asyncio.sleep(self.time_out)
 
     async def _subscribe_candles(self, queue_name, symbol, time_frame):
         async with ClientSession() as session:
-            url_rest = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
+            url = f'{self._root_url_rest}/v3/markets/{(await self._symbol_translate(symbol, session))}' \
                 f'/candles?CandleInterval={self._timeframe_translate[time_frame]}'
             while True:
-                async with session.get(url_rest) as response:
+                async with session.get(url) as response:
                     response = await response.text()
 
                     # Data format
@@ -175,9 +165,7 @@ class Bittrex(BaseExchange):
                       }
                     ]
                     """
-
                     candle = json.loads(response)[-1]
-
                     time = int(datetime.datetime.strptime(candle['startsAt'], "%Y-%m-%dT%H:%M:%fZ").timestamp())
                     candle = (candle['open'], candle['high'], candle['low'], candle['close'], candle['volume'], time)
 
@@ -209,7 +197,6 @@ class Bittrex(BaseExchange):
                       ]
                     }
                     """
-
                     asks = [(item['rate'], item['quantity']) for item in bid_ask['ask']][:20]
                     bids = [(item['rate'], item['quantity']) for item in bid_ask['bid']][:20]
                     asks.reverse()
@@ -238,7 +225,6 @@ class Bittrex(BaseExchange):
               }
             ]
             """
-
             for item in response:
                 if item['symbol'].replace('-', '') == symbol:
                     return item['symbol']

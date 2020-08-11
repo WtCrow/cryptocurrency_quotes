@@ -17,7 +17,7 @@ class ExchangeFactory:
     def __init__(self, mq_exchanger):
         self.exchanger = mq_exchanger
         # Classes all exchanges
-        self._exchanges = [Binance, ]
+        self._exchanges = [Binance, Bittrex, HitBTC, HuobiGlobal, OkCoin, OkEx]
         # already created exchanges instance
         self._instances_exchanges = dict()
 
