@@ -1,5 +1,6 @@
 ﻿from aiohttp.client_exceptions import ClientConnectorError
 from abc import abstractmethod
+import traceback
 import aio_pika
 import asyncio
 import json
@@ -20,11 +21,13 @@ def _catch_error_decorator_factory(empty_data=None):
             except (asyncio.CancelledError, ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError,
                     ClientConnectorError) as e:
                 if type(e).__name__ != asyncio.CancelledError.__name__:
+                    trc = traceback.format_exc()
+                    msg = f'Class: {args[0].__class__}, {type(e).__name__}, {trc}'
                     if len(args) > 1:
                         await args[0]._send_data_in_exchange(args[1], empty_data)
-                        await args[0]._send_error_message(error_place=args[1], exception=type(e).__name__)
+                        await args[0]._send_error_message(error_place=args[1], exception=msg)
                     else:
-                        await args[0]._send_error_message(error_place='get_access_symbols', exception=type(e).__name__)
+                        await args[0]._send_error_message(error_place='get_access_symbols', exception=msg)
                         return []
         return wrapper
     return catch_error_decorator

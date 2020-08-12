@@ -7,51 +7,49 @@
 </head>
 <body>
     <main>
-		<div id="tables">
-			<div id="symbols_table">
-                <div class="tools_tables">
-				    <span>Exchanges:</span>
-                    <select name="exchanges_combobox" id="exchanges_combobox" onchange="changeExchange(this)"
-						style="width: 100%" disabled>
-						<option>loading...</option>
-					</select>
-                    <span>Pairs:</span><br/>
-                    <input list="symbols_combobox" id="input_symbols_combobox" style="width: 100%" disabled>
-                        <datalist id="symbols_combobox">
-                            <option value="">loading...</option>
-                        </datalist><br/><br/>
-                </div>
-				<div class="scroll_symbols">
-					<table>
-						<thead>
-						<tr>
-							<td><span>Pair</span></td>
-							<td><span>Bid</span></td>
-							<td><span>Ask</span></td>
-						</tr>
-						</thead>
-						<tbody id="symbols_rows">
-						</tbody>
-					</table>
-				</div>
-				<button name="delete_button" id="delete_button" onclick="buttonDeleteClick()"
-                        style="width: 100%" disabled>
-					<span>Delete from table</span>
-				</button>
+		<div id="symbols_table">
+			<div class="tools_tables">
+				<span>Exchanges:</span>
+				<select name="exchanges_combobox" id="exchanges_combobox" onchange="changeExchange(this)"
+					style="width: 100%" disabled>
+					<option>loading...</option>
+				</select>
+				<span>Pairs:</span><br/>
+				<input list="symbols_combobox" id="input_symbols_combobox" style="width: 100%" disabled>
+					<datalist id="symbols_combobox">
+						<option value="">loading...</option>
+					</datalist><br/><br/>
 			</div>
-			<div id="market_depth">
-				<div class="scroll_market_depth">
-					<table>
-						<thead>
-						<tr>
-							<td><span>Price</span></td>
-							<td><span>Volume</span></td>
-						</tr>
-						</thead>
-						<tbody id="content_market_depth">
-						</tbody>
-					</table>
-				</div>
+			<div class="scroll_symbols">
+				<table>
+					<thead>
+					<tr>
+						<td><span>Pair</span></td>
+						<td><span>Bid</span></td>
+						<td><span>Ask</span></td>
+					</tr>
+					</thead>
+					<tbody id="symbols_rows">
+					</tbody>
+				</table>
+			</div>
+			<button name="delete_button" id="delete_button" onclick="buttonDeleteClick()"
+					style="width: 100%" disabled>
+				<span>Delete from table</span>
+			</button>
+		</div>
+		<div id="market_depth">
+			<div class="scroll_market_depth">
+				<table>
+					<thead>
+					<tr>
+						<td><span>Price</span></td>
+						<td><span>Volume</span></td>
+					</tr>
+					</thead>
+					<tbody id="content_market_depth">
+					</tbody>
+				</table>
 			</div>
 		</div>
 		<div id="ohlc">

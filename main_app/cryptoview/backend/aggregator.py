@@ -132,7 +132,7 @@ class CryptoCurrencyAggregator:
 
             # validation
             error_place = body.get('error_place')
-            message = body.get('message')
+            message = 'Sorry! Error on server'
             if not message or not error_place:
                 return
 
