@@ -1,7 +1,7 @@
 class Observer:
 
     def __init__(self, ws):
-        """:param ws: WebSocket connection"""
+        """ws - WebSocket connection"""
         self.ws = ws
 
     async def update(self, data):

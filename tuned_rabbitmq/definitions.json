@@ -2,7 +2,7 @@
   "users": [
     {
       "name": "admin",
-      "password": "qwerty1",
+      "password": "admin",
       "tags": "administrator"
     },
     {

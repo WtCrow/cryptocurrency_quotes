@@ -1,4 +1,5 @@
-﻿from abc import abstractmethod
+﻿from aiohttp.client_exceptions import ClientConnectorError
+from abc import abstractmethod
 import aio_pika
 import asyncio
 import json
@@ -16,7 +17,8 @@ def _catch_error_decorator_factory(empty_data=None):
         async def wrapper(*args, **kwargs):
             try:
                 return await target(*args, **kwargs)
-            except (asyncio.CancelledError, ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
+            except (asyncio.CancelledError, ValueError, KeyError, IndexError, TypeError, json.JSONDecodeError,
+                    ClientConnectorError) as e:
                 if type(e).__name__ != asyncio.CancelledError.__name__:
                     if len(args) > 1:
                         await args[0]._send_data_in_exchange(args[1], empty_data)
@@ -67,6 +69,7 @@ class BaseExchange:
     async def get_starting_candles(self, queue_name, symbol, time_frame):
         """Send array OHLCV-candles to exchanger with routing_key == queue_name
 
+        sort by time ASC
         Candle format: [open: : str(float), high: : str(float), low: str(float), close: str(float), volume: str(float),
                         time: int (unix_time)]
 

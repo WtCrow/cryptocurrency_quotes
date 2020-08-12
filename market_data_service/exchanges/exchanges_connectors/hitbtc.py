@@ -95,10 +95,12 @@ class HitBTC(BaseExchange):
                 await self._send_data_in_exchange(queue_name, (ticker['bid'], ticker['ask']))
 
     async def _get_starting_candles(self, queue_name, symbol, time_frame):
-        url = f'{self._root_url_rest}/api/2/public/candles/{symbol}?period={time_frame}'
+        url = f'{self._root_url_rest}/api/2/public/candles/{symbol}?period={time_frame}' \
+              f'&limit={self.request_candles}&sort=DESC'
         async with ClientSession() as session:
             async with session.get(url) as response:
                 response = await response.text()
+                candles = json.loads(response)
 
                 # Data format
                 """
@@ -124,11 +126,12 @@ class HitBTC(BaseExchange):
                 ]
                 """
                 formatted_candles = []
-                candles = json.loads(response)
                 for candle in candles:
                     time = int(datetime.strptime(candle['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ').timestamp())
                     formatted_candles.append((candle['open'], candle['max'], candle['min'], candle['close'],
                                               candle['volume'], time))
+                formatted_candles.reverse()
+
                 await self._send_data_in_exchange(queue_name, formatted_candles)
 
     async def _get_starting_depth(self, queue_name, symbol):

@@ -20,7 +20,7 @@ class Controller:
 
     JSON-message format:
         {
-            action: <sub | unsub | get_starting_data>,
+            action: <sub | unsub | get_starting>,
             data_id: <listing_info | data_type.exchange.pair[.time_frame]>
         }
 
@@ -31,7 +31,7 @@ class Controller:
           current value
     data_id:
         listing_info - get information about exchanges, pairs and timeframes access
-        Send only if 'action' == 'get_starting_data'
+        Send only if 'action' == 'get_starting'
 
         About parts data_type.exchange.pair[.time_frame]:
             data_type:
@@ -62,7 +62,7 @@ class Controller:
     ERR_BAD_EXCHANGE = "Invalid 'exchange' value"
     ERR_BAD_PAIR = "Invalid 'pair' value"
     ERR_BAD_TIME_FRAME = "Invalid 'time_frame' value"
-    ERR_BAD_LISTING_MESSAGE = "Listing information only with 'action' == 'get_starting_data' requested"
+    ERR_BAD_LISTING_MESSAGE = "Listing information only with 'action' == 'get_starting' requested"
     ERR_BAD_ACTION = "Invalid 'action' value"
     ERR_NOT_JSON = "Message isn't JSON"
 

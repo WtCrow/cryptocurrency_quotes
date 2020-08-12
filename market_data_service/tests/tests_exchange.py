@@ -33,6 +33,7 @@ class TestShading:
         def tearDown(self):
             self.loop.close()
 
+        @skip
         def test_get_access_symbols(self):
             """Test method get_access_symbol
 
@@ -53,6 +54,7 @@ class TestShading:
                 self.assertEqual(type(symbol), str, f'symbol == {symbol}, type(symbol) == {type(symbol)}')
                 self.assertTrue(symbol.isupper(), f'Symbol {symbol} not is upper')
 
+        @skip
         @patch('exchanges.abstract_exchange.BaseExchange._send_data_in_exchange')
         def test_get_starting_ticker(self, mock_func):
             """Test method get_starting_ticker
@@ -99,6 +101,7 @@ class TestShading:
             for candle in candles:
                 self._check_candle(candle)
 
+        @skip
         @patch('exchanges.abstract_exchange.BaseExchange._send_data_in_exchange')
         def test_get_starting_depth(self, mock_func):
             """Test method get_starting_depth
@@ -128,6 +131,7 @@ class TestShading:
             asks = [item[0] for item in depth[1]]
             self.assertTrue(all(asks[i] >= asks[i + 1] for i in range(len(asks) - 1)), f'asks == {asks}')
 
+        @skip
         @patch('exchanges.abstract_exchange.BaseExchange._send_data_in_exchange')
         def test_subscribe_ticker(self, mock_send_data_in_queue):
             """Test method subscribe_ticker
@@ -156,6 +160,7 @@ class TestShading:
                 self.assertTrue(bid <= ask, f'{bid} > {ask}')
                 self.assertTrue(bid >= 0 and ask >= 0, f'bid == {bid}, ask == {ask}')
 
+        @skip
         @patch('exchanges.abstract_exchange.BaseExchange._send_data_in_exchange')
         def test_subscribe_candles(self, mock_send_data_in_queue):
             """Test method subscribe_candles
@@ -179,6 +184,7 @@ class TestShading:
                 self.assertEqual(arguments[0], self.test_queue, f'{arguments[0]} != {self.test_queue}')
                 self._check_candle(arguments[1])
 
+        @skip
         @patch('exchanges.abstract_exchange.BaseExchange._send_data_in_exchange')
         def test_subscribe_depth(self, mock_send_data_in_queue):
             """Test method subscribe_ticker

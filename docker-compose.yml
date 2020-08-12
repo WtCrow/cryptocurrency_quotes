@@ -1,11 +1,9 @@
 version: '2.1'
-
 networks:
   localnet:
     driver: bridge
 
 services:
-
   main_web:
     build: ./main_app
     ports:
@@ -22,7 +20,7 @@ services:
         condition: service_started
       rabbit:
         condition: service_healthy
-    links: 
+    links:
       - rabbit
     networks:
       - localnet
@@ -41,7 +39,7 @@ services:
     depends_on:
       rabbit:
         condition: service_healthy
-    links: 
+    links:
       - rabbit
     networks:
       - localnet
@@ -52,6 +50,7 @@ services:
     build: ./tuned_rabbitmq
     ports:
       - "15672:15672"
+      - "15671:15671"
       - "5672:5672"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
@@ -63,3 +62,4 @@ services:
     volumes:
       - ./tuned_rabbitmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
       - ./tuned_rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+
