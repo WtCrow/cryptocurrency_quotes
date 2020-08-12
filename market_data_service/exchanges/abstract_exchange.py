@@ -69,7 +69,7 @@ class BaseExchange:
     async def get_starting_candles(self, queue_name, symbol, time_frame):
         """Send array OHLCV-candles to exchanger with routing_key == queue_name
 
-        sort by time ASC
+        sort by time ASC (1, 2, 3, 4 ...)
         Candle format: [open: : str(float), high: : str(float), low: str(float), close: str(float), volume: str(float),
                         time: int (unix_time)]
 

@@ -22,21 +22,21 @@ async def ws_api_crypto_currency(request):
 
     Connect to endpoint ws://{domain}/api/v1/ws
 
-    send json with format:
+    send JSON with format:
         {
             action: sub | unsub,
             data_id: data_type.exchange.pair[.time_frame] | listing_info
         }
 
     data_type: ticket | candles | cup
-    good values exchange, pair, time_frame you can get in response listing_info message
+    valid values for exchange, pair and time_frame you can request by listing_info data_id
 
     if 'data_type' = 'candles', need add time_frame
 
     """
-    err_bad_action_value = "Bad 'action' value"
-    err_not_json = "Message is not JSON format"
-    err_bad_msg_format = "In message not needed keys"
+    ERR_BAD_ACTION = "Bad 'action' value"
+    ERR_NOT_JSON = "Message is not JSON format"
+    ERR_NOT_FULL_REQUEST = "In message not needed keys"
 
     ws = web.WebSocketResponse()
     observer = Observer(ws)
@@ -53,11 +53,11 @@ async def ws_api_crypto_currency(request):
             if message.type == WSMsgType.text:
                 try:
                     message = json.loads(message.data)
-                    action = message.get('action', '')
-                    data_id = message.get('data_id', '')
+                    action = message.get('action')
+                    data_id = message.get('data_id')
 
                     if not action or not data_id:
-                        await ws.send_json(dict(error=err_bad_msg_format))
+                        await ws.send_json(dict(error=ERR_NOT_FULL_REQUEST))
                         continue
 
                     if action == 'sub':
@@ -65,9 +65,9 @@ async def ws_api_crypto_currency(request):
                     elif action == 'unsub':
                         await request.app['Aggregator'].detach(observer, data_id)
                     else:
-                        await ws.send_json(dict(error=err_bad_action_value))
+                        await ws.send_json(dict(error=ERR_BAD_ACTION))
                 except json.JSONDecodeError:
-                    await ws.send_json(dict(error=err_not_json))
+                    await ws.send_json(dict(error=ERR_NOT_JSON))
             else:
                 await request.app['Aggregator'].detach(observer)
                 return ws

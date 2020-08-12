@@ -52,8 +52,8 @@ class Controller:
     All message send in JSON
     Market data format is described at BaseExchange in module exchanges/abstract_exchange.py
     Error contain fields 'error_roting_key' and 'exception'
-        error - market data_id, that generate error or bad message
-        exception - python exception name or error message
+        error_place - data_id, that generate error or bad message ('unknown' if not data_id key)
+        message - error message
 
     """
 
@@ -110,7 +110,7 @@ class Controller:
                 body = json.loads(message.body.decode('utf-8'))
             except json.JSONDecodeError:
                 asyncio.get_event_loop().create_task(
-                    self._send_error_in_exchange(message.body, Controller.ERR_NOT_JSON)
+                    self._send_error_in_exchange(None, Controller.ERR_NOT_JSON)
                 )
                 return
             print(body)
@@ -134,15 +134,14 @@ class Controller:
 
     def _is_not_valid(self, message):
         """Validation message. If request not valid, then send error message and return True"""
-        if 'action' not in message:
-            asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_ACTION))
+        if 'action' not in message\
+            or message['action'] not in (Controller.ACTION_TYPE_SUB, Controller.ACTION_TYPE_UNSUB,
+                                         Controller.ACTION_TYPE_STARTING):
+            error_place = message.get('data_id')
+            asyncio.get_event_loop().create_task(self._send_error_in_exchange(error_place, Controller.ERR_BAD_ACTION))
             return True
         elif 'data_id' not in message:
-            asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_DATA_TYPE))
-            return True
-        elif message['action'] not in (Controller.ACTION_TYPE_SUB, Controller.ACTION_TYPE_UNSUB,
-                                       Controller.ACTION_TYPE_STARTING):
-            asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_ACTION))
+            asyncio.get_event_loop().create_task(self._send_error_in_exchange('unknown', Controller.ERR_BAD_DATA_TYPE))
             return True
         else:
             # data_id validation
@@ -150,34 +149,36 @@ class Controller:
 
             if fragments_id[0] not in (DATA_TYPE_DEPTH, DATA_TYPE_TICKER, DATA_TYPE_LISTING, DATA_TYPE_CANDLES):
                 asyncio.get_event_loop().create_task(
-                    self._send_error_in_exchange(message, Controller.ERR_BAD_DATA_TYPE)
+                    self._send_error_in_exchange(message['data_id'], Controller.ERR_BAD_DATA_TYPE)
                 )
                 return True
 
             if fragments_id[0] == DATA_TYPE_LISTING:
                 if message['action'] != Controller.ACTION_TYPE_STARTING:
                     asyncio.get_event_loop().create_task(
-                        self._send_error_in_exchange(message, Controller.ERR_BAD_LISTING_MESSAGE)
+                        self._send_error_in_exchange(message['data_id'], Controller.ERR_BAD_LISTING_MESSAGE)
                     )
                     return True
                 return False
 
             if fragments_id[0] == DATA_TYPE_CANDLES and len(fragments_id) < 4:
                 asyncio.get_event_loop().create_task(
-                    self._send_error_in_exchange(message, Controller.ERR_BAD_TIME_FRAME)
+                    self._send_error_in_exchange(message['data_id'], Controller.ERR_BAD_TIME_FRAME)
                 )
                 return True
 
             exchange, pair = fragments_id[1], fragments_id[2]
             if exchange not in self._listing:
-                asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_EXCHANGE))
+                asyncio.get_event_loop().create_task(self._send_error_in_exchange(message['data_id'],
+                                                                                  Controller.ERR_BAD_EXCHANGE))
                 return True
             elif pair not in self._listing[exchange][1]:
-                asyncio.get_event_loop().create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_PAIR))
+                asyncio.get_event_loop().create_task(self._send_error_in_exchange(message['data_id'],
+                                                                                  Controller.ERR_BAD_PAIR))
                 return True
             elif fragments_id[0] == DATA_TYPE_CANDLES and fragments_id[3] not in self._listing[exchange][0]:
                 asyncio.get_event_loop()\
-                    .create_task(self._send_error_in_exchange(message, Controller.ERR_BAD_TIME_FRAME))
+                    .create_task(self._send_error_in_exchange(message['data_id'], Controller.ERR_BAD_TIME_FRAME))
                 return True
 
         return False
