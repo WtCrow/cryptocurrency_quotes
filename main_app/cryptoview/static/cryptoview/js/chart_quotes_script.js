@@ -1,4 +1,4 @@
-var chart = Highcharts.stockChart('ohlc_chart', {
+let chart = Highcharts.stockChart('ohlc_chart', {
     title: {text: 'Select pair'},
     rangeSelector: {enabled:false},
     yAxis: [{
@@ -41,40 +41,39 @@ var chart = Highcharts.stockChart('ohlc_chart', {
         }]
 });
 // Data series
-var ohlc = [],
-    vol = [];
+let ohlc = [], vol = [];
 
 // Variable for CSS-selected
-var selectedPair = '';
-var selectedRow = null;
+let selectedPair = '';
+let selectedRow = null;
 
 // Current selected exchange
-var exchange = '';
+let exchange = '';
 
-var chartPair = '',
+let chartPair = '',
     chartExchange = '',
     timeFrame = '';
 
 // Need for check data from ws - this new or old candle
-var lastTime = 0;
+let lastTime = 0;
 
 // Format: {exchange:[[time_frames],[pairs]], ...}
-var listing = null;
+let listing = null;
 
 // data_id send in format: msg_type.data_type.exchange.pair[.time_frame] or listing_info
-var MSG_TYPE_START = 'starting',
+let MSG_TYPE_START = 'starting',
     MSG_TYPE_UPD = 'update';
-var DATA_TYPE_LISTING = 'listing_info',
+let DATA_TYPE_LISTING = 'listing_info',
     DATA_TYPE_TICKER = 'ticker',
     DATA_TYPE_CANDLES = 'candles',
     DATA_TYPE_DEPTH = 'depth';
-var ACTION_SUB = 'sub',
+let ACTION_SUB = 'sub',
     ACTION_UNSUB = 'unsub'
 
-var wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + '/api/v1/ws';
-var conn = new WebSocket(wsUri);
+let wsUri = (window.location.protocol == 'https:' && 'wss://' || 'ws://') + window.location.host + '/api/v1/ws';
+let conn = new WebSocket(wsUri);
 conn.onmessage = function(e) {
-    var message = JSON.parse(e.data);
+    let message = JSON.parse(e.data);
 
     // if send error, msg contain error key
     if (message.hasOwnProperty('error')) {
@@ -88,7 +87,7 @@ conn.onmessage = function(e) {
         return
     }
 
-    // format: msg_type.data_type.exchange.pair[.time_frame]
+    // format: 0:msg_type.1:data_type.2:exchange.3:pair[.4:time_frame]
     fragment_id = message['data_id'].split('.');
     switch (fragment_id[1]) {
         case DATA_TYPE_TICKER: {
@@ -97,8 +96,9 @@ conn.onmessage = function(e) {
             break;
         }
         case DATA_TYPE_CANDLES: {
-            // if chart data change, but ws send update
+            // if client get old data, that already unsubscribed then ignore is
             if (chartExchange != fragment_id[2] || chartPair != fragment_id[3] || timeFrame != fragment_id[4]) { return; }
+
             // if server send empty message return
             if (message['data'].length == 0) { return; }
 
@@ -114,8 +114,9 @@ conn.onmessage = function(e) {
             break;
         }
         case DATA_TYPE_DEPTH: {
-            // if chart data change, but ws send update
+            // if client get old data, that already unsubscribed then ignore is
             if (chartExchange != fragment_id[2] || chartPair != fragment_id[3]) { return; }
+
             updateDepth(message['data'])
             break;
         }
@@ -138,9 +139,9 @@ function sendRequest(action, data_id) {
 
 // Functions for updates
 function updateTicker(exchange_and_pair, data) {
-    var symbolsTable = document.getElementById('symbols_rows');
+    let symbolsTable = document.getElementById('symbols_rows');
 
-    for (var i=0; i < symbolsTable.rows.length; i++) {
+    for (let i=0; i < symbolsTable.rows.length; i++) {
         pair = $('#symbols_rows tr').eq(i).find(".pair").text();
 
         if (pair == exchange_and_pair) {
@@ -155,8 +156,8 @@ function updateTicker(exchange_and_pair, data) {
 function setCandles(candles) {
     ohlc = [];
     vol = [];
-    var time = 0;
-    for (var i = 0; i < candles.length; i++) {
+    let time = 0;
+    for (let i = 0; i < candles.length; i++) {
         time = candles[i][5] * 1000
         ohlc.push([time, parseFloat(candles[i][0]), parseFloat(candles[i][1]), parseFloat(candles[i][2]),
                   parseFloat(candles[i][3])]);
@@ -170,7 +171,7 @@ function setCandles(candles) {
 
 // update last candles or append new candles
 function updateCandle(candle) {
-    var time = candle[5] * 1000
+    let time = candle[5] * 1000
 
     // if time not update, delete last candle and volume bar
     if (lastTime == time)
@@ -199,11 +200,11 @@ function updateDepth(data) {
     bids = data[0];
     asks = data[1];
 
-    for (var i = 0; i < asks.length; i++) {
+    for (let i = 0; i < asks.length; i++) {
         htmlChilds += "<tr style=\" background: #FD8080\"><td>" + asks[i][0] + "</td><td>" + asks[i][1] + "</td></tr>";
     }
 
-    for (var i = 0; i < bids.length; i++) {
+    for (let i = 0; i < bids.length; i++) {
         htmlChilds += "<tr style=\"background: #73F182\"><td>" + bids[i][0] + "</td><td>" + bids[i][1] + "</td></tr>";
     }
 
@@ -220,7 +221,7 @@ function updateListing(data) {
 
     exchanges = Object.keys(listing)
     htmlChilds = '';
-    for (var i = 0; i < exchanges.length; i++) {
+    for (let i = 0; i < exchanges.length; i++) {
         htmlChilds += '<option value="' + exchanges[i] + '">' + exchanges[i] + '</option>';
     }
     document.getElementById('exchanges_combobox').innerHTML = htmlChilds;
@@ -229,7 +230,7 @@ function updateListing(data) {
 
     symbols = data[exchange][1]
     htmlChilds = '<option value=""></option>';
-    for (var i = 0; i < symbols.length; i++) {
+    for (let i = 0; i < symbols.length; i++) {
         htmlChilds += '<option value="' + symbols[i] + '">' + symbols[i] + '</option>';
     }
     document.getElementById('symbols_combobox').innerHTML = htmlChilds;
@@ -240,13 +241,13 @@ function errorMsg(data_id, msg) {
     alert('Server error: ' + msg)
 
     fragment_id = data_id.split('.')
-    var errDataType = fragment_id[1],
+    let errDataType = fragment_id[1],
         errExchange = fragment_id[2],
         errPair = fragment_id[3];
 
     if (errDataType == DATA_TYPE_TICKER) {
-        var symbolsTable = document.getElementById('symbols_rows');
-        for (var i=0; i < symbolsTable.rows.length; i++) {
+        let symbolsTable = document.getElementById('symbols_rows');
+        for (let i=0; i < symbolsTable.rows.length; i++) {
             pair = $('#symbols_rows tr').eq(i).find(".pair").text();
 
             if (pair == errExchange + ' | ' + err_pair) {
@@ -316,10 +317,10 @@ function changeExchange(selectObject) {
     }
 
     exchange = selectObject.value;
-    var pairs = listing[exchange][1];
+    let pairs = listing[exchange][1];
 
     htmlChilds = '<option value=""></option>';
-    for (var i = 0; i < pairs.length; i++) {
+    for (let i = 0; i < pairs.length; i++) {
         htmlChilds += '<option value="' + pairs[i] + '">' + pairs[i] + '</option>';
     }
 
@@ -345,7 +346,7 @@ function clickToSymbol(){
 }
 
 function doubleClickToSymbol(){
-    var selectedExchange = selectedPair.split(' | ')[0],
+    let selectedExchange = selectedPair.split(' | ')[0],
         selectedSymbol = selectedPair.split(' | ')[1];
     // If select pair then already to char return
     if (chartPair == selectedSymbol && chartExchange == selectedExchange) { return; }
@@ -360,10 +361,10 @@ function doubleClickToSymbol(){
 
     // if chart is empty or select other exchange, change time frame
     if (chartPair == '' || selectedExchange != chartExchange){
-        var timeFrames = listing[selectedExchange][0],
+        let timeFrames = listing[selectedExchange][0],
             htmlChilds = '';
 
-        for (var i = 0; i < listing[selectedExchange][0].length; i++) {
+        for (let i = 0; i < listing[selectedExchange][0].length; i++) {
             timeFrame = listing[selectedExchange][0][i]
             htmlChilds += '<option value="' + timeFrame + '">' + timeFrame + '</option>';
         }
@@ -387,7 +388,7 @@ function buttonDeleteClick() {
     console.log(selectedPair + ' ' + selectedRow.innerHTML)
     selectedRow.remove();
 
-    var selectedExchange = selectedPair.split(' | ')[0],
+    let selectedExchange = selectedPair.split(' | ')[0],
         selectedSymbol = selectedPair.split(' | ')[1];
 
     request = DATA_TYPE_TICKER + '.' + selectedExchange + '.' + selectedSymbol;
@@ -453,9 +454,9 @@ function buttonDeleteClick() {
 
 // Select new pair
 $(document).on('change', 'input', function(){
-    var options = $('datalist')[0].options;
-    var symbol = '';
-    for (var i=0; i<options.length; i++) {
+    let options = $('datalist')[0].options;
+    let symbol = '';
+    for (let i=0; i<options.length; i++) {
         if (options[i].value == $(this).val()) {
             symbol = $(this).val();
             break;
@@ -469,7 +470,7 @@ $(document).on('change', 'input', function(){
     // if this pair this exchange not contain in table, then add
     if (symbol != '' && symbolsThisExchange.includes(symbol) && !symbolsTableHTML.includes(formatPair)) {
         // update HTML
-        var new_row = '<tr><td class="pair">' + exchange + ' | ' + symbol + '</td><td class="bid">-</td><td class="ask">-</td></tr>'
+        let new_row = '<tr><td class="pair">' + exchange + ' | ' + symbol + '</td><td class="bid">-</td><td class="ask">-</td></tr>'
         $('#symbols_rows').append(new_row)
 
         // set events
