@@ -149,7 +149,7 @@ class HuobiGlobal(BaseExchange):
                     response = json.loads(gzip.decompress(response.data).decode("utf-8"))
 
                     if 'ping' in response.keys():
-                        json_params = json.dumps(dict(pong=str(datetime.datetime.utcnow())))
+                        json_params = dict(pong=str(datetime.datetime.utcnow().timestamp()))
                         await ws.send_json(json_params)
                         continue
                     elif 'status' in response.keys():
@@ -190,7 +190,7 @@ class HuobiGlobal(BaseExchange):
                     response = json.loads(gzip.decompress(response.data).decode("utf-8"))
 
                     if 'ping' in response.keys():
-                        json_params = json.dumps(dict(pong=str(datetime.datetime.utcnow())))
+                        json_params = dict(pong=str(datetime.datetime.utcnow().timestamp()))
                         await ws.send_json(json_params)
                         continue
                     elif 'status' in response.keys():
@@ -238,7 +238,7 @@ class HuobiGlobal(BaseExchange):
                     data = json.loads(gzip.decompress(response.data).decode("utf-8"))
 
                     if 'ping' in data.keys():
-                        json_params = json.dumps(dict(pong=str(datetime.datetime.utcnow())))
+                        json_params = dict(pong=str(datetime.datetime.utcnow().timestamp()))
                         await ws.send_json(json_params)
                         continue
                     elif 'status' in data.keys():
