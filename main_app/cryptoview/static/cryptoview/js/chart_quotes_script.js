@@ -82,8 +82,7 @@ conn.onmessage = function(e) {
     }
 
     if (message['data_id'] == DATA_TYPE_LISTING) {
-        // message with listing contain JSON
-        updateListing(JSON.parse(message['data']))
+        updateListing(message['data'])
         return
     }
 

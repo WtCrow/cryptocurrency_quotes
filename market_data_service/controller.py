@@ -255,7 +255,7 @@ class Controller:
     async def _send_listing_info(self):
         """Update _listing and send new listing in exchange"""
         self._listing = await self._get_listing_info()
-        await self._send_data_in_exchange(self._queue_for_listing, json.dumps(self._listing))
+        await self._send_data_in_exchange(self._queue_for_listing, self._listing)
 
     async def _send_data_in_exchange(self, queue_name, data):
         """Send message to exchanger"""
