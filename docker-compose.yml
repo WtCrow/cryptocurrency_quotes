@@ -54,8 +54,8 @@ services:
       - "5672:5672"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:15672"]
-      interval: 15s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
     networks:
       - localnet
