@@ -7,7 +7,7 @@ If you want start server local, exist two way for this:
 
 With docker and docker-compose:
 1) Enter in terminal: `cd <path/to/project>`
-2) Enter in terminal: `(sudo) docker-compose up`
+2) Enter in terminal: `docker-compose up`
 3) Go to url: http://0.0.0.0:8080
 4) Profit!
 
