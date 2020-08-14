@@ -6,3 +6,4 @@ tests/
 .git
 Dockerfile
 .dockerignore
+__pycache__/

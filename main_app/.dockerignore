@@ -3,6 +3,7 @@ venv/
 tests/
 .idea/
 **/__pycache__/
+__pycache__/
 .git
 Dockerfile
 .dockerignore
