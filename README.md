@@ -1,4 +1,4 @@
-Web app for streaming cryptocurrency quotes (candlestick, bid and ask prices, market depth).
+#Web app for streaming cryptocurrency quotes (candlestick, bid and ask prices, market depth).
 A program, that collects information, runs separately. Communicates via message queues (RabbitMQ).
 
 You can see result on this url: https://cryptocurrency-quotes.herokuapp.com
