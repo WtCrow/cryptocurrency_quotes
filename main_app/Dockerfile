@@ -17,6 +17,8 @@ ENV QUEUE_SERVICE_CRYPTO_QUOTES=crypto_currency_ms
 ENV PORT=8080
 EXPOSE $PORT
 
+RUN adduser -D gunicorn_user
+
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN mkdir -p /run/nginx
 
