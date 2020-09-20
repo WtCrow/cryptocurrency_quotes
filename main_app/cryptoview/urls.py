@@ -10,5 +10,5 @@ def setup_routes(app):
     ]
     app.router.add_routes(urlpatterns)
 
-    path_to_static_dir = Path(__file__).parents[0] / 'static'
-    app.router.add_static('/', path_to_static_dir)
+    # path_to_static_dir = Path(__file__).parents[0] / 'static'
+    # app.router.add_static('/static/', path_to_static_dir)

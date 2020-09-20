@@ -10,7 +10,7 @@ async def create_app():
     app = web.Application()
 
     app['Aggregator'] = CryptoCurrencyAggregator()
-    asyncio.get_event_loop().set_debug(True)
+    asyncio.get_event_loop().set_debug(False)
     asyncio.get_event_loop().create_task(app['Aggregator'].run())
 
     aiohttp_jinja2.setup(app, loader=jinja2.PackageLoader('cryptoview', 'templates'))
